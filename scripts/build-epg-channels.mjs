@@ -2,7 +2,7 @@
 // Ce fichier est ensuite passé au grabber iptv-org/epg (`npm run grab --- --channels=...`).
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { loadCatalog, loadConfig, filterEntries, fetchJSON, ROOT } from './lib/api.mjs';
+import { loadCatalog, loadConfig, filterEntries, fetchJSON, ROOT, isMain } from './lib/api.mjs';
 
 const xmlEsc = (s) => String(s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' })[c]);
 
@@ -29,7 +29,7 @@ export function pickGuides(entries, guides, cfg) {
   return out;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   const cfg = await loadConfig();
   const [{ entries }, guides] = await Promise.all([loadCatalog(), fetchJSON('guides')]);
   const picked = pickGuides(filterEntries(entries, cfg), guides, cfg);

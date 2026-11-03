@@ -3,7 +3,7 @@
 import { readFile, access } from 'node:fs/promises';
 import { gunzipSync } from 'node:zlib';
 import { join } from 'node:path';
-import { writeJSON, PUBLIC, DATA } from './lib/api.mjs';
+import { writeJSON, PUBLIC, DATA, isMain } from './lib/api.mjs';
 
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
 const decode = (s) => s
@@ -41,7 +41,7 @@ export function parseXmltv(xml, now = Date.now() / 60000) {
   return programmes;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   const candidates = process.argv[2] ? [process.argv[2]] : [join(PUBLIC, 'guide.xml.gz'), join(PUBLIC, 'guide.xml')];
   let file;
   for (const c of candidates) { try { await access(c); file = c; break; } catch { /* suivant */ } }

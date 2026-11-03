@@ -1,9 +1,9 @@
 // (3) Page stats : carte choroplèthe (échelle log, une teinte) + barres horizontales.
+import { header, esc, fmtDate } from './common.js';
 import { geoNaturalEarth1, geoPath } from 'd3-geo';
 import { feature } from 'topojson-client';
 import world from 'world-atlas/countries-110m.json';
 import isoNumeric from './iso-numeric.json';
-import { header, esc, fmtDate } from './common.js';
 import { categoryLabel } from './labels.js';
 import { enableTvNav } from './tv-nav.js';
 
@@ -25,7 +25,7 @@ function bars(el, rows, { href } = {}) {
   const max = Math.max(...rows.map(([, n]) => n));
   el.innerHTML = rows.map(([label, n, key]) => {
     const tag = href ? 'a' : 'div';
-    return `<${tag} class="bar"${href ? ` href="${href(key ?? label)}"` : ''} title="${esc(label)} : ${fmt(n)}">
+    return `<${tag} class="bar"${href ? ` href="${esc(href(key ?? label))}"` : ''} title="${esc(label)} : ${fmt(n)}">
       <span class="lbl">${esc(label)}</span>
       <span class="track"><span class="fill" style="width:${Math.max(0.5, (n / max) * 100)}%"></span></span>
       <span class="val">${fmt(n)}</span></${tag}>`;
@@ -54,6 +54,10 @@ function drawMap(stats, countries) {
   // Légende : rampe continue + bornes réelles.
   $('legend').innerHTML = `<span>1</span><span class="ramp" style="background:linear-gradient(90deg, ${css('--seq-lo')}, ${css('--seq-hi')})"></span><span>${fmt(Math.max(...values))} chaînes (échelle log)</span>`;
 
+}
+
+function bindMap() {
+  const wrap = $('map');
   const tip = $('tip');
   wrap.addEventListener('mousemove', (e) => {
     const p = e.target.closest('path');
@@ -88,9 +92,10 @@ async function init() {
   $('kpis').innerHTML = kpis.map(([v, l]) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('');
 
   drawMap(stats, countries);
+  bindMap();
   bars($('countries'), Object.entries(stats.byCountry).slice(0, 15).map(([cc, n]) => [`${countries[cc]?.flag || ''} ${countries[cc]?.name || cc}`, n, cc]),
-    { href: (cc) => `index.html#pays=${cc}&liste=world` });
-  bars($('cats'), Object.entries(stats.byCategory).map(([c, n]) => [categoryLabel(c), n, c]), { href: (c) => `index.html#cat=${c}&liste=world` });
+    { href: (cc) => `index.html#pays=${encodeURIComponent(cc)}&liste=world` });
+  bars($('cats'), Object.entries(stats.byCategory).map(([c, n]) => [categoryLabel(c), n, c]), { href: (c) => `index.html#cat=${encodeURIComponent(c)}&liste=world` });
   bars($('langs'), stats.byLanguage);
   const order = ['4K', '1080p', '720p', 'SD (< 720p)', 'Inconnue'];
   bars($('quality'), order.filter((q) => stats.byQuality[q]).map((q) => [q, stats.byQuality[q]]));

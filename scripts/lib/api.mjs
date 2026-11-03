@@ -1,7 +1,7 @@
 // Accès à l'API iptv-org + jointure des données en un « catalogue » plat.
 import { mkdir, readFile, writeFile, stat } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const PUBLIC = join(ROOT, 'public');
@@ -48,6 +48,9 @@ export async function writeJSON(path, data) {
 export async function readJSONIfExists(path) {
   try { return JSON.parse(await readFile(path, 'utf8')); } catch { return null; }
 }
+
+/** Vrai si le module est lancé directement (`node scripts/x.mjs`), robuste aux espaces/accents dans le chemin. */
+export const isMain = (metaUrl) => !!process.argv[1] && metaUrl === pathToFileURL(process.argv[1]).href;
 
 /** Identifiant stable d'un flux, aussi utilisé comme tvg-id (format iptv-org « chaine@feed »). */
 export const tvgId = (channel, feed) => (feed ? `${channel}@${feed}` : channel);
@@ -126,7 +129,7 @@ export function filterEntries(entries, cfg, { nsfwMode = cfg.nsfw ?? 'tag', stat
     if (nsfwMode === 'exclude' && e.nsfw) return false;
     if (nsfwMode === 'only' && !e.nsfw) return false;
     if (cfg.excludeGeoBlocked && e.labels.includes('Geo-blocked')) return false;
-    if (status && cfg.excludeDead && status[e.url]?.ok === false) return false;
+    if (status && cfg.excludeDead && isDead(e, status[e.url])) return false;
     if (favs.has(e.channel)) return true; // un favori passe toujours les filtres pays/catégorie
     const geo = (!countries.size && !langs.size) || countries.has(e.country) || e.languages.some((l) => langs.has(l));
     if (!geo) return false;
@@ -134,6 +137,16 @@ export function filterEntries(entries, cfg, { nsfwMode = cfg.nsfw ?? 'tag', stat
     if (e.categories.every((c) => exCats.has(c))) return false;
     return !cats.size || e.categories.some((c) => cats.has(c));
   });
+}
+
+/**
+ * Un flux n'est « mort » que si l'échec n'est pas dû à la géolocalisation du vérificateur
+ * (runner GitHub aux États-Unis) : flux étiqueté géo-bloqué, ou réponse 403/451, on le garde.
+ */
+export function isDead(e, r) {
+  if (!r || r.ok !== false) return false;
+  if (e.labels.includes('Geo-blocked') || r.code === 403 || r.code === 451) return false;
+  return true;
 }
 
 /** Charge status.json s'il est fiable (assez de flux OK) — protège contre une panne réseau qui viderait la playlist. */

@@ -64,6 +64,12 @@ let t;
 $('rows').addEventListener('error', (e) => { if (e.target.tagName === 'IMG') e.target.style.visibility = 'hidden'; }, true);
 $('q').addEventListener('input', () => { clearTimeout(t); t = setTimeout(render, 200); });
 $('when').addEventListener('change', render);
-setInterval(render, 60_000); // la ligne « en cours » avance toute seule
+// La ligne « en cours » avance toute seule ; on garde l'élément focalisé à la télécommande.
+setInterval(() => {
+  const focusables = [...$('rows').querySelectorAll('a')];
+  const idx = focusables.indexOf(document.activeElement);
+  render();
+  if (idx !== -1) $('rows').querySelectorAll('a')[idx]?.focus({ preventScroll: true });
+}, 60_000);
 enableTvNav({ onBack: () => { history.back(); return true; } });
 init();

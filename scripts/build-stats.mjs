@@ -1,6 +1,6 @@
 // (3) Agrégats du catalogue mondial → public/data/stats.json
 import { join } from 'node:path';
-import { loadCatalog, readJSONIfExists, writeJSON, DATA } from './lib/api.mjs';
+import { loadCatalog, readJSONIfExists, writeJSON, DATA, isMain } from './lib/api.mjs';
 
 export function qualityBucket(q) {
   const n = parseInt(q, 10);
@@ -48,7 +48,7 @@ export function computeStats(entries, languages, status) {
   };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   const { entries, languages } = await loadCatalog();
   const status = await readJSONIfExists(join(DATA, 'status.json'));
   const stats = computeStats(entries, languages, status);

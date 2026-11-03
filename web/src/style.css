@@ -16,6 +16,16 @@
   --seq-lo: #3a3324;     /* carte : peu de chaînes (proche du fond) */
   --seq-hi: #ffc266;     /* carte : beaucoup de chaînes */
   --nodata: #1a2536;
+  /* Lecteur vidéo : rendu sombre fixe dans les deux thèmes (choix délibéré, l'image est sur fond noir). */
+  --video-bg: #000000;
+  --on-video: #ffffff;
+  --on-video-muted: #d6dbe4;
+  --osd-accent: #ffb547;
+  --osd-panel: rgba(13, 20, 32, 0.92);
+  --osd-shade: rgba(0, 0, 0, 0.85);
+  --osd-btn: rgba(255, 255, 255, 0.12);
+  --osd-btn-line: rgba(255, 255, 255, 0.25);
+  --osd-track: rgba(255, 255, 255, 0.2);
   --font-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
   --font-body: 'Atkinson Hyperlegible', 'Segoe UI', Roboto, system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
@@ -121,29 +131,29 @@ button.primary { background: var(--accent); color: var(--accent-ink); border-col
 .empty { padding: 3rem 1rem; text-align: center; color: var(--muted); }
 
 /* Lecteur plein écran */
-.player { position: fixed; inset: 0; z-index: 50; background: #000; display: grid; }
-.player video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+.player { position: fixed; inset: 0; z-index: 50; background: var(--video-bg); display: grid; }
+.player video { width: 100%; height: 100%; object-fit: contain; background: var(--video-bg); }
 .osd {
   position: absolute; inset: auto 0 0 0; padding: 1.5rem max(1.5rem, env(safe-area-inset-left, 0px)) max(1.5rem, env(safe-area-inset-bottom, 0px));
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85) 40%); color: #fff;
+  background: linear-gradient(transparent, var(--osd-shade) 40%); color: var(--on-video);
   display: grid; grid-template-columns: auto 1fr auto; gap: 1rem 1.25rem; align-items: center; transition: opacity 0.3s;
 }
 .player.idle .osd { opacity: 0; }
-.osd .lcn { font-size: 2.2rem; color: #ffb547; }
+.osd .lcn { font-size: 2.2rem; color: var(--osd-accent); }
 .osd h2 { font-size: 1.6rem; }
-.osd .now { color: #d6dbe4; }
-.osd .now b { color: #ffb547; font-family: var(--font-mono); font-weight: 400; margin-right: 0.4rem; }
-.progress { height: 4px; background: rgba(255, 255, 255, 0.2); border-radius: 2px; margin-top: 0.4rem; overflow: hidden; max-width: 32rem; }
-.progress i { display: block; height: 100%; background: #ffb547; }
+.osd .now { color: var(--on-video-muted); }
+.osd .now b { color: var(--osd-accent); font-family: var(--font-mono); font-weight: 400; margin-right: 0.4rem; }
+.progress { height: 4px; background: var(--osd-track); border-radius: 2px; margin-top: 0.4rem; overflow: hidden; max-width: 32rem; }
+.progress i { display: block; height: 100%; background: var(--osd-accent); }
 .osd-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.osd-actions button { background: rgba(255, 255, 255, 0.12); color: #fff; border-color: rgba(255, 255, 255, 0.25); }
+.osd-actions button { background: var(--osd-btn); color: var(--on-video); border-color: var(--osd-btn-line); }
 .player-msg {
   position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); max-width: min(36rem, 90vw);
-  background: rgba(13, 20, 32, 0.92); color: #e8edf5; padding: 1.25rem 1.5rem; border-radius: var(--radius); text-align: center;
+  background: var(--osd-panel); color: var(--on-video); padding: 1.25rem 1.5rem; border-radius: var(--radius); text-align: center;
 }
 .dial {
   position: fixed; top: max(1.5rem, env(safe-area-inset-top, 0px)); right: max(1.5rem, env(safe-area-inset-right, 0px)); z-index: 60;
-  font-family: var(--font-mono); font-size: 3rem; color: #ffb547; background: rgba(0, 0, 0, 0.75); padding: 0.2rem 1rem; border-radius: 8px;
+  font-family: var(--font-mono); font-size: 3rem; color: var(--osd-accent); background: var(--osd-shade); padding: 0.2rem 1rem; border-radius: 8px;
 }
 
 /* Guide TV */

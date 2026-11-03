@@ -18,7 +18,8 @@ export async function loadChannels() {
   if (!raw) throw new Error('data/channels.json introuvable : lance « npm run playlist ».');
   const results = status?.results || {};
   const mine = new Set(raw.mine);
-  const favorites = new Set([...raw.favorites, ...prefs.favorites()]);
+  const configFavs = new Set(raw.favorites);
+  const favOverrides = prefs.favoriteOverrides();
   const byId = new Map();
   for (const [id, name, country, categories, languages, nsfw, logo, url, quality, geo, not247, headers] of raw.entries) {
     let ch = byId.get(id);
@@ -38,7 +39,7 @@ export async function loadChannels() {
     ch.status = ch.streams.some((s) => s.ok) ? 'ok' : ch.streams.every((s) => s.ok === false) ? 'ko' : null;
     ch.geo = ch.streams.every((s) => s.geo);
     ch.quality = ch.streams.map((s) => s.quality).filter(Boolean).sort((a, b) => QUALITY(b) - QUALITY(a))[0] || null;
-    ch.favorite = favorites.has(ch.channel) || favorites.has(ch.id);
+    ch.favorite = favOverrides[ch.channel] ?? (configFavs.has(ch.channel) || configFavs.has(ch.id));
     ch.group = groupOf(ch, ch.favorite ? new Set([ch.channel]) : null);
   }
   const channels = [...byId.values()].sort(
@@ -66,7 +67,8 @@ export function nowNext(epg, id) {
 export const hhmm = (min) => new Date(min * 60000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
 export function initials(name) {
-  return name.replace(/[^\p{L}\p{N} ]/gu, '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+  // Pas de \p{L} (ES2018) : incompatible avec les navigateurs de TV visés.
+  return name.replace(/[()[\]{}'".,:;!?&+*\/|_-]/g, ' ').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 }
 
 /** Construit un M3U côté navigateur à partir d'une liste de chaînes (meilleur flux de chacune). */

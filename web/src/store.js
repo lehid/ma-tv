@@ -11,13 +11,12 @@ function write(data) {
 export const prefs = {
   get: (k, fallback) => read()[k] ?? fallback,
   set(k, v) { const d = read(); d[k] = v; write(d); },
-  favorites: () => read().favorites || [],
-  toggleFavorite(id) {
+  /** { idChaîne: true|false } : ajoute ou retire un favori, y compris ceux venant de config.json. */
+  favoriteOverrides: () => read().fav || {},
+  setFavorite(id, on) {
     const d = read();
-    const set = new Set(d.favorites || []);
-    set.has(id) ? set.delete(id) : set.add(id);
-    d.favorites = [...set];
+    d.fav = { ...(d.fav || {}), [id]: on };
     write(d);
-    return set.has(id);
+    return on;
   },
 };

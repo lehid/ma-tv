@@ -17,8 +17,8 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
         <span class="lcn"></span>
         <div><h2></h2><div class="now"></div><div class="progress" hidden><i></i></div></div>
         <div class="osd-actions">
-          <button data-act="prev" aria-label="Chaîne précédente">▲ Préc.</button>
-          <button data-act="next" aria-label="Chaîne suivante">▼ Suiv.</button>
+          <button data-act="prev" aria-label="Chaîne précédente">CH− Préc.</button>
+          <button data-act="next" aria-label="Chaîne suivante">CH+ Suiv.</button>
           <button data-act="fav">☆ Favori</button>
           <button data-act="alt">Autre flux</button>
           <button data-act="close">✕ Fermer</button>
@@ -79,11 +79,12 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     video.addEventListener('playing', onPlaying, { once: true });
     const Hls = await loadHls();
     if (token !== playToken) return; // l'utilisateur a déjà zappé
+    let recovered = false;
     if (Hls.isSupported()) {
       hls = new Hls({ manifestLoadingMaxRetry: 1, levelLoadingMaxRetry: 2, fragLoadingMaxRetry: 2 });
       hls.on(Hls.Events.ERROR, (_, data) => {
         if (!data.fatal) return;
-        if (data.type === Hls.ErrorTypes.MEDIA_ERROR) { hls.recoverMediaError(); return; }
+        if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !recovered) { recovered = true; hls.recoverMediaError(); return; }
         tryNext(data.response?.code ? `Erreur HTTP ${data.response.code}` : 'Flux injoignable (hors ligne, géo-bloqué ou CORS)');
       });
       hls.loadSource(s.url);
@@ -144,8 +145,8 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
   document.addEventListener('keydown', (e) => {
     if (root.hidden) return;
     wake();
-    if (KEYS.chUp.has(e.key) || KEYS.chUpCodes.has(e.keyCode)) { e.preventDefault(); zap(-1); }
-    else if (KEYS.chDown.has(e.key) || KEYS.chDownCodes.has(e.keyCode)) { e.preventDefault(); zap(1); }
+    if (KEYS.chUp.has(e.key) || KEYS.chUpCodes.has(e.keyCode)) { e.preventDefault(); zap(1); } // CH+ = chaîne suivante
+    else if (KEYS.chDown.has(e.key) || KEYS.chDownCodes.has(e.keyCode)) { e.preventDefault(); zap(-1); }
   });
 
   return { open, close, root, isOpen: () => !root.hidden, refresh: () => current && renderOsd() };

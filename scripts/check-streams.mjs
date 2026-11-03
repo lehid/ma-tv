@@ -1,7 +1,7 @@
 // Vérifie les flux de MA sélection (avant filtrage des morts) → public/data/status.json
 // Usage : node scripts/check-streams.mjs [--all]   (--all = tout le catalogue mondial, long)
 import { join } from 'node:path';
-import { loadCatalog, loadConfig, filterEntries, writeJSON, DATA } from './lib/api.mjs';
+import { loadCatalog, loadConfig, filterEntries, writeJSON, DATA, isMain } from './lib/api.mjs';
 
 const CONCURRENCY = Number(process.env.CHECK_CONCURRENCY || 24);
 const TIMEOUT_MS = Number(process.env.CHECK_TIMEOUT_MS || 8000);
@@ -50,7 +50,7 @@ async function pool(items, n, fn) {
   await Promise.all(workers);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   const cfg = await loadConfig();
   const { entries } = await loadCatalog();
   const list = process.argv.includes('--all') ? entries : filterEntries(entries, cfg);

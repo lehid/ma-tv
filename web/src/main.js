@@ -60,7 +60,7 @@ function tile(c) {
     <span class="tile-head"><span class="lcn">${String(c.lcn).padStart(3, '0')}</span>${dot}</span>
     <span class="logo">${c.logo ? `<img src="${esc(c.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="initials">${esc(initials(c.name))}</span>`}</span>
     <span class="tile-name">${esc(c.name)}</span>
-    <span class="tile-sub">${now ? `▶ ${esc(now[2])}` : `${flag} ${esc(cname)}`}</span>
+    <span class="tile-sub">${now ? `▶ ${esc(now[2])}` : `${esc(flag)} ${esc(cname)}`}</span>
     ${badges ? `<span class="badges">${badges}</span>` : ''}
     ${c.favorite ? '<span class="fav" aria-label="Favori">★</span>' : ''}
   </button>`;
@@ -146,12 +146,16 @@ async function init() {
   ui.country.value = h.get('pays') || '';
   ui.cat.value = h.get('cat') || '';
   ui.lang.value = h.get('langue') || '';
-  setScope(h.get('liste') || (h.get('pays') ? 'world' : saved.scope || 'mine'));
+  setScope(h.get('liste') || saved.scope || 'mine');
 
   player = createPlayer({
     getList: () => filtered,
     epg,
-    onToggleFavorite: (c) => { c.favorite = prefs.toggleFavorite(c.channel); },
+    onToggleFavorite: (c) => {
+      const on = prefs.setFavorite(c.channel, !c.favorite);
+      for (const x of data.channels) if (x.channel === c.channel) x.favorite = on;
+      render();
+    },
   });
 
   refresh();

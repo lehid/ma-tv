@@ -45,8 +45,10 @@ function nearest(from, [dx, dy], scope) {
 export function enableTvNav({ getScope = () => document, onBack } = {}) {
   document.addEventListener('keydown', (e) => {
     if (isBack(e)) {
-      const typing = e.target.matches?.('input[type="search"], input[type="text"]') && e.target.value && e.key === 'Backspace';
-      if (!typing && onBack?.()) e.preventDefault();
+      // Dans un champ, seules les vraies touches Retour de télécommande (Tizen 10009, webOS 461) quittent.
+      const inField = e.target.matches?.('input, select, textarea');
+      if (inField && e.keyCode !== 10009 && e.keyCode !== 461) return;
+      if (onBack?.()) e.preventDefault();
       return;
     }
     const dir = DIRS[e.key];

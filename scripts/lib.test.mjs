@@ -34,3 +34,11 @@ test('M3U : tag NSFW, groupe, options VLC, pas d\'injection', () => {
   assert.match(m3u, /#EXTVLCOPT:http-referrer=https:\/\/r\//);
   assert.equal(m3u.split('\n').filter((l) => l.startsWith('#EXTINF')).length, 1);
 });
+
+test('géo-bloqué ou 403 vu depuis le runner : jamais considéré mort', async () => {
+  const { isDead } = await import('./lib/api.mjs');
+  assert.equal(isDead(e({ labels: ['Geo-blocked'] }), { ok: false, code: 404 }), false);
+  assert.equal(isDead(e({}), { ok: false, code: 403 }), false);
+  assert.equal(isDead(e({}), { ok: false, reason: 'timeout' }), true);
+  assert.equal(isDead(e({}), { ok: null }), false);
+});
