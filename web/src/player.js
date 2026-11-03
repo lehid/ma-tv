@@ -11,7 +11,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(
 export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
   const root = el(`
     <div class="player" hidden role="dialog" aria-label="Lecteur">
-      <video playsinline autoplay></video>
+      <video playsinline webkit-playsinline autoplay></video>
       <div class="player-msg" hidden></div>
       <div class="osd">
         <span class="lcn"></span>
@@ -59,11 +59,26 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     root.querySelector('[data-act="alt"]').hidden = c.streams.length < 2;
   }
 
-  function destroyHls() { if (hls) { hls.destroy(); hls = null; } video.onerror = null; }
+  function destroyHls() {
+    if (hls) { hls.destroy(); hls = null; }
+    video.onerror = null;
+    video.removeAttribute('src');
+  }
+
+  // Lecture HLS native seulement chez Apple (iPhone, iPad, Mac : la voie la plus fiable) ou sans MediaSource.
+  // Ailleurs hls.js, même si canPlayType répond « maybe » : les Chrome récents ou anciens sur Android le disent
+  // aussi, avec une lecture native moins robuste.
+  // Sur iPhone, hls.js passe par ManagedMediaSource, qui peut donner le son sans l'image.
+  const hasNativeHls = () => !!video.canPlayType('application/vnd.apple.mpegurl')
+    && (/Apple/.test(navigator.vendor || '') || !window.MediaSource);
+
+  const NATIVE_TIMEOUT_MS = 15000; // pas de « playing » au bout de 15 s → flux suivant
+  const NO_PICTURE_CHECK_MS = 2500; // délai après « playing » pour vérifier qu'il y a une image
 
   async function playStream() {
     destroyHls();
     const token = ++playToken;
+    const alive = () => token === playToken;
     const s = current.streams[streamIdx];
     if (!s) {
       showMsg(`<strong>Aucun flux lisible ici.</strong><br>Cette chaîne est peut-être hors ligne, géo-bloquée ou refuse les navigateurs.
@@ -75,23 +90,38 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
       return tryNext(`Flux HTTP non lisible depuis une page HTTPS.`);
     }
     showMsg(`Connexion à <strong>${esc(current.name)}</strong>${current.streams.length > 1 ? ` · flux ${streamIdx + 1}/${current.streams.length}` : ''}…`);
-    const onPlaying = () => showMsg('');
-    video.addEventListener('playing', onPlaying, { once: true });
-    const Hls = await loadHls();
-    if (token !== playToken) return; // l'utilisateur a déjà zappé
-    let recovered = false;
-    if (Hls.isSupported()) {
+
+    let started = false;
+    video.addEventListener('playing', () => {
+      if (!alive() || started) return;
+      started = true;
+      showMsg('');
+      // Son sans image : piste vidéo absente ou codec non décodable sur cet appareil.
+      setTimeout(() => {
+        if (!alive() || video.videoWidth > 0) return;
+        if (streamIdx + 1 < current.streams.length) tryNext('Pas d\'image (piste vidéo absente ou codec non supporté)');
+        else showMsg('<strong>Son seulement.</strong><br>Ce flux n\'a pas d\'image lisible sur cet appareil. Essaie-le dans VLC ou ton appli TV.');
+      }, NO_PICTURE_CHECK_MS);
+    }, { once: true });
+
+    if (hasNativeHls()) {
+      video.onerror = () => { if (alive()) tryNext('Lecture impossible'); };
+      setTimeout(() => { if (alive() && !started) tryNext('Pas de réponse du flux'); }, NATIVE_TIMEOUT_MS);
+      video.src = s.url;
+    } else {
+      const Hls = await loadHls();
+      if (!alive()) return; // l'utilisateur a déjà zappé
+      if (!Hls.isSupported()) { showMsg('<strong>Ce navigateur ne sait pas lire ces flux.</strong><br>Utilise la playlist dans VLC ou ton appli TV.'); return; }
+      video.disableRemotePlayback = true; // exigé par Apple pour ManagedMediaSource
+      let recovered = false;
       hls = new Hls({ manifestLoadingMaxRetry: 1, levelLoadingMaxRetry: 2, fragLoadingMaxRetry: 2 });
       hls.on(Hls.Events.ERROR, (_, data) => {
-        if (!data.fatal) return;
+        if (!data.fatal || !alive()) return;
         if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !recovered) { recovered = true; hls.recoverMediaError(); return; }
         tryNext(data.response?.code ? `Erreur HTTP ${data.response.code}` : 'Flux injoignable (hors ligne, géo-bloqué ou CORS)');
       });
       hls.loadSource(s.url);
       hls.attachMedia(video);
-    } else {
-      video.src = s.url; // HLS natif
-      video.onerror = () => tryNext('Lecture impossible');
     }
     video.play().catch(() => { video.muted = true; video.play().catch(() => {}); });
   }
