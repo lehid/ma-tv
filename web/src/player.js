@@ -39,7 +39,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
   let lastFocus = null;
   let playToken = 0;
 
-  const showMsg = (html) => { msg.innerHTML = html; msg.hidden = !html; };
+  const showMsg = (html) => { delete msg.dataset.resume; msg.innerHTML = html; msg.hidden = !html; };
   const wake = () => {
     root.classList.remove('idle');
     clearTimeout(idleTimer);
@@ -216,14 +216,48 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
   root.addEventListener('mousemove', wake);
   root.addEventListener('touchstart', wake, { passive: true });
 
-  // Sortie du plein écran : iOS met la vidéo en pause en quittant son lecteur natif (« écran figé »).
-  // On relance la lecture et on réaffiche l'OSD.
+  // Sortie du plein écran : iOS met la vidéo en pause en quittant son lecteur natif, parfois APRÈS
+  // l'évènement de sortie. On ouvre une courte fenêtre pendant laquelle toute pause est annulée,
+  // sauf si l'utilisateur avait lui-même mis en pause dans le plein écran (pause bien avant la sortie).
+  const RESUME_WINDOW_MS = 1500;
+  const USER_PAUSE_MARGIN_MS = 1000;
+  let resumeUntil = 0;
+  let resumeToken = -1;
+  let lastPauseAt = 0;
+
+  function resumeNow() {
+    if (root.hidden || resumeToken !== playToken || chromecast.isCasting() || !video.paused) return;
+    video.play().then(() => { if (msg.dataset.resume) showMsg(''); }).catch((err) => {
+      if (err?.name !== 'NotAllowedError' || resumeToken !== playToken) return;
+      // iOS refuse une reprise sans geste : un bouton évite l'écran figé.
+      showMsg('<button type="button" data-resume class="primary">▶ Reprendre</button>');
+      msg.dataset.resume = '1';
+    });
+  }
+
   const resumeAfterFullscreen = () => {
     if (root.hidden) return;
     wake();
     updateFsButton();
-    if (video.paused && !chromecast.isCasting()) video.play().catch(() => {});
+    const sincePause = Date.now() - lastPauseAt;
+    if (video.paused && sincePause > USER_PAUSE_MARGIN_MS) return; // pause volontaire : on la respecte
+    resumeToken = playToken;
+    resumeUntil = Date.now() + RESUME_WINDOW_MS;
+    resumeNow();
+    setTimeout(resumeNow, 250);
+    setTimeout(resumeNow, 800);
   };
+  video.addEventListener('pause', () => {
+    lastPauseAt = Date.now();
+    if (Date.now() < resumeUntil) resumeNow(); // pause automatique d'iOS juste après la sortie
+  });
+  msg.addEventListener('click', (e) => {
+    if (!e.target.closest('[data-resume]')) return;
+    e.stopPropagation();
+    delete msg.dataset.resume;
+    showMsg('');
+    video.play().catch(() => {});
+  });
   video.addEventListener('webkitendfullscreen', resumeAfterFullscreen);
   const onFsChange = () => { if (!fsElement()) resumeAfterFullscreen(); };
   document.addEventListener('fullscreenchange', onFsChange);
