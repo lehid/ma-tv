@@ -8,9 +8,12 @@ const xmlEsc = (s) => String(s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': 
 
 export function pickGuides(entries, guides, cfg) {
   const preferred = cfg.epg?.preferredSites || [];
+  // Sites injoignables depuis les runners GitHub (403, ECONNRESET…) : un autre site, même moins bien classé, vaut mieux.
+  const excluded = new Set(cfg.epg?.excludeSites || []);
   const langs = new Set((cfg.languages || []).map((l) => l.slice(0, 2)));
   const byChannel = new Map();
   for (const g of guides) {
+    if (excluded.has(g.site)) continue;
     if (!byChannel.has(g.channel)) byChannel.set(g.channel, []);
     byChannel.get(g.channel).push(g);
   }

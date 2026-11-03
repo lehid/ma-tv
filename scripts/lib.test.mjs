@@ -42,3 +42,16 @@ test('géo-bloqué ou 403 vu depuis le runner : jamais considéré mort', async 
   assert.equal(isDead(e({}), { ok: false, reason: 'timeout' }), true);
   assert.equal(isDead(e({}), { ok: null }), false);
 });
+
+test('EPG : sites exclus ignorés, site préféré prioritaire', async () => {
+  const { pickGuides } = await import('./build-epg-channels.mjs');
+  const entries = [{ id: 'A.fr@SD', channel: 'A.fr', feed: 'SD', name: 'A' }, { id: 'B.fr@SD', channel: 'B.fr', feed: 'SD', name: 'B' }];
+  const guides = [
+    { channel: 'A.fr', feed: 'SD', site: 'bad.tv', site_id: '1', lang: 'fr' },
+    { channel: 'A.fr', feed: 'SD', site: 'good.tv', site_id: '2', lang: 'fr' },
+    { channel: 'B.fr', feed: 'SD', site: 'bad.tv', site_id: '3', lang: 'fr' },
+  ];
+  const picked = pickGuides(entries, guides, { languages: ['fra'], epg: { preferredSites: ['bad.tv'], excludeSites: ['bad.tv'] } });
+  assert.equal(picked.get('A.fr@SD').site, 'good.tv');
+  assert.equal(picked.has('B.fr@SD'), false);
+});

@@ -13,6 +13,7 @@
   "perCountryPlaylists": true,
   "epg": {
     "days": 2,
-    "preferredSites": ["tv.orange.fr", "chaines-tv.orange.fr", "programme-tv.net", "telerama.fr", "canalplus.com", "france.tv", "tvpassport.com"]
+    "preferredSites": ["tv.orange.fr", "tv.sfr.fr", "programme-tv.net", "telerama.fr", "canalplus.com", "france.tv", "tvpassport.com"],
+    "excludeSites": ["chaines-tv.orange.fr", "pickx.be", "teleboy.ch", "distro.tv", "sat.tv"]
   }
 }

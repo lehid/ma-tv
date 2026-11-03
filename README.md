@@ -48,6 +48,7 @@ La playlist contient déjà l'adresse du guide (`url-tvg`), donc la plupart des 
 | `excludeDead` | retire les flux qui ont échoué à la vérification de la nuit |
 | `perCountryPlaylists` | génère aussi `playlist-<pays>.m3u` |
 | `epg.preferredSites` | sources de programmes à privilégier |
+| `epg.excludeSites` | sources à ne jamais utiliser (injoignables depuis GitHub Actions) |
 | `siteUrl` | adresse publique du site (sert à écrire l'URL du guide dans la playlist) |
 
 Les ids de chaînes se trouvent sur [iptv-org.github.io](https://iptv-org.github.io/) ou dans le lecteur (survol d'une tuile, attribut `data-id`).
