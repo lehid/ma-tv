@@ -21,6 +21,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
           <button data-act="next" aria-label="Chaîne suivante">CH+ Suiv.</button>
           <button data-act="fav">☆ Favori</button>
           <button data-act="alt">Autre flux</button>
+          <button data-act="fs">⛶ Plein écran</button>
           <button data-act="close">✕ Fermer</button>
         </div>
       </div>
@@ -141,8 +142,44 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     playStream();
     wake();
     root.querySelector('[data-act="next"]').focus({ preventScroll: true });
-    root.requestFullscreen?.().catch(() => {});
+    enterFullscreen({ auto: true });
   }
+
+  // Plein écran : API standard (ordinateur, Android, iPad, TV) sur tout le lecteur pour garder l'OSD ;
+  // sur iPhone, seule la <video> peut passer en plein écran (lecteur natif d'iOS).
+  const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+  const canFsRoot = () => !!(root.requestFullscreen || root.webkitRequestFullscreen);
+  const canFsVideo = () => typeof video.webkitEnterFullscreen === 'function';
+  const fsBtn = root.querySelector('[data-act="fs"]');
+
+  function updateFsButton() {
+    fsBtn.hidden = !canFsRoot() && !canFsVideo();
+    fsBtn.textContent = fsElement() ? '⤡ Quitter' : '⛶ Plein écran';
+  }
+
+  function enterFullscreen({ auto = false } = {}) {
+    try {
+      if (canFsRoot()) {
+        const req = root.requestFullscreen ? root.requestFullscreen() : root.webkitRequestFullscreen();
+        Promise.resolve(req).then(() => screen.orientation?.lock?.('landscape')).catch(() => {});
+      } else if (!auto && canFsVideo()) {
+        video.webkitEnterFullscreen(); // iPhone : pas d'appel automatique, il cacherait l'OSD
+      }
+    } catch (e) { /* plein écran refusé */ }
+  }
+
+  function exitFullscreen() {
+    try {
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+      if (video.webkitDisplayingFullscreen) video.webkitExitFullscreen();
+    } catch (e) { /* rien à quitter */ }
+  }
+
+  const toggleFullscreen = () => (fsElement() ? exitFullscreen() : enterFullscreen());
+  document.addEventListener('fullscreenchange', updateFsButton);
+  document.addEventListener('webkitfullscreenchange', updateFsButton);
+  updateFsButton();
 
   function zap(delta) {
     const list = getList();
@@ -158,7 +195,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     video.load();
     root.hidden = true;
     showMsg('');
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    exitFullscreen();
     lastFocus?.focus({ preventScroll: true });
   }
 
@@ -170,6 +207,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     else if (act === 'next') zap(1);
     else if (act === 'alt') { streamIdx = (streamIdx + 1) % current.streams.length; playStream(); }
     else if (act === 'fav') { onToggleFavorite?.(current); renderOsd(); }
+    else if (act === 'fs') toggleFullscreen();
   });
   root.addEventListener('mousemove', wake);
   document.addEventListener('keydown', (e) => {
@@ -177,6 +215,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     wake();
     if (KEYS.chUp.has(e.key) || KEYS.chUpCodes.has(e.keyCode)) { e.preventDefault(); zap(1); } // CH+ = chaîne suivante
     else if (KEYS.chDown.has(e.key) || KEYS.chDownCodes.has(e.keyCode)) { e.preventDefault(); zap(-1); }
+    else if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); toggleFullscreen(); }
     else if (KEYS.playPause.has(e.key) || KEYS.playPauseCodes.has(e.keyCode)) {
       e.preventDefault();
       const play = e.key === 'MediaPlay' || e.keyCode === 415 || (e.key !== 'MediaPause' && e.keyCode !== 19 && video.paused);
