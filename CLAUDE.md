@@ -13,6 +13,7 @@ Lecteur web + playlists M3U + guide TV + stats, construits à partir de l'API pu
 - `scripts/lib/m3u.mjs` : génération M3U ; tout texte passe par `clean()` (anti-injection de lignes)
 - `web/src/labels.js` : libellés FR et groupes, partagés par Node et le navigateur
 - `web/src/data.js` : décode `data/channels.json` (format tableau, voir `build-playlist.mjs`), regroupe les flux par tvg-id
+- `tv-apps/` : coquilles Tizen/webOS qui redirigent vers `siteUrl` ; `npm run tv:package` → `dist-tv/` ; touches TV et sortie d'appli dans `web/src/tv-app.js`
 - `web/src/tv-nav.js` : navigation spatiale à la télécommande ; `player.js` : hls.js chargé à la demande, avec repli flux par flux
 
 ## Conventions

@@ -8,3 +8,4 @@ public/guide.xml*
 public/data/*.json
 !public/data/.gitkeep
 epg/channels.xml
+dist-tv/

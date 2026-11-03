@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Coquille Samsung Tizen de Ma TV : index.html redirige vers le site hébergé (l'adresse du site est injectée
+     depuis config.json → siteUrl au packaging, voir scripts/package-tv-apps.mjs). -->
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets"
+        id="https://github.com/lehid/ma-tv" version="1.0.0" viewmodes="maximized">
+  <tizen:application id="MaTVlehid1.MaTV" package="MaTVlehid1" required_version="5.0"/>
+  <tizen:profile name="tv-samsung"/>
+  <name>Ma TV</name>
+  <description>Lecteur IPTV Ma TV (site __SITE_URL__/) en plein écran, pilotable à la télécommande.</description>
+  <author href="https://github.com/lehid">lehid</author>
+  <license href="https://opensource.org/licenses/MIT">MIT</license>
+  <icon src="icon.png"/>
+  <content src="index.html"/>
+
+  <!-- Réseau : le site, les logos et les flux vidéo viennent d'origines multiples. -->
+  <access origin="*" subdomains="true"/>
+  <tizen:allow-navigation>__SITE_HOST__</tizen:allow-navigation>
+  <tizen:privilege name="http://tizen.org/privilege/internet"/>
+  <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+
+  <tizen:content-security-policy>default-src * 'unsafe-inline' 'unsafe-eval' data: blob:</tizen:content-security-policy>
+  <tizen:setting screen-orientation="landscape" context-menu="disable" background-support="disable"
+                 encryption="disable" install-location="auto" hwkey-event="enable"/>
+  <feature name="http://tizen.org/feature/screen.size.all"/>
+</widget>

@@ -26,6 +26,7 @@ La playlist contient déjà l'adresse du guide (`url-tvg`), donc la plupart des 
 
 - **Android TV / Google TV / Fire TV** : installe **TiviMate** (ou Televizo, IPTV Smarters), choisis *Ajouter une playlist → M3U*, colle l'URL de la playlist, puis, si l'appli le demande, celle du guide.
 - **Samsung (Tizen)** et **LG (webOS)** : installe **SS IPTV**, *Smart IPTV* ou *Flix IPTV* depuis le store de la TV, puis ajoute la playlist par URL (certaines applis passent par leur site web pour la saisir).
+- **Icône Ma TV sur l'écran d'accueil** (Samsung/LG, mode développeur) : voir [`tv-apps/`](tv-apps/README.md) et `npm run tv:package`.
 - **Sans appli** : ouvre `https://lehid.github.io/ma-tv/` dans le navigateur de la TV.
   - Flèches pour naviguer, **OK** pour lancer une chaîne, **Retour** pour revenir.
   - **CH+ / CH−** ou ▲▼ pour zapper, et tu peux taper directement un numéro (`012`).

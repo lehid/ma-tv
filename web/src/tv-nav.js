@@ -1,4 +1,6 @@
 // Navigation spatiale à la télécommande (flèches + OK + Retour) pour navigateurs de Smart TV.
+import { registerTvKeys, exitTvApp } from './tv-app.js';
+
 export const KEYS = {
   back: new Set(['Escape', 'Backspace', 'BrowserBack', 'GoBack', 'XF86Back']),
   backCodes: new Set([10009, 461, 8, 27]), // Tizen, webOS, Backspace, Échap
@@ -6,6 +8,8 @@ export const KEYS = {
   chDown: new Set(['PageDown', 'ChannelDown', 'MediaTrackPrevious']),
   chUpCodes: new Set([427, 33]),
   chDownCodes: new Set([428, 34]),
+  playPause: new Set(['MediaPlayPause', 'MediaPlay', 'MediaPause']),
+  playPauseCodes: new Set([10252, 415, 19]), // Tizen/webOS : Lecture/Pause, Lecture, Pause
 };
 export const isBack = (e) => KEYS.back.has(e.key) || KEYS.backCodes.has(e.keyCode);
 
@@ -43,12 +47,15 @@ function nearest(from, [dx, dy], scope) {
  * Dans un champ texte, ← → restent pour le curseur ; ↑ ↓ permettent d'en sortir.
  */
 export function enableTvNav({ getScope = () => document, onBack } = {}) {
+  registerTvKeys();
   document.addEventListener('keydown', (e) => {
     if (isBack(e)) {
       // Dans un champ, seules les vraies touches Retour de télécommande (Tizen 10009, webOS 461) quittent.
       const inField = e.target.matches?.('input, select, textarea');
       if (inField && e.keyCode !== 10009 && e.keyCode !== 461) return;
       if (onBack?.()) e.preventDefault();
+      // Retour sur la page d'accueil sans rien à fermer : dans l'appli TV, on la quitte.
+      else if ((e.keyCode === 10009 || e.keyCode === 461) && exitTvApp()) e.preventDefault();
       return;
     }
     const dir = DIRS[e.key];

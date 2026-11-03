@@ -147,6 +147,11 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     wake();
     if (KEYS.chUp.has(e.key) || KEYS.chUpCodes.has(e.keyCode)) { e.preventDefault(); zap(1); } // CH+ = chaîne suivante
     else if (KEYS.chDown.has(e.key) || KEYS.chDownCodes.has(e.keyCode)) { e.preventDefault(); zap(-1); }
+    else if (KEYS.playPause.has(e.key) || KEYS.playPauseCodes.has(e.keyCode)) {
+      e.preventDefault();
+      const play = e.key === 'MediaPlay' || e.keyCode === 415 || (e.key !== 'MediaPause' && e.keyCode !== 19 && video.paused);
+      if (play) video.play().catch(() => {}); else video.pause();
+    }
   });
 
   return { open, close, root, isOpen: () => !root.hidden, refresh: () => current && renderOsd() };

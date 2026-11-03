@@ -15,7 +15,9 @@
     "test": "node --test \"scripts/**/*.test.mjs\"",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "tv:package": "node scripts/package-tv-apps.mjs",
+    "tv:icons": "node scripts/build-tv-icons.mjs"
   },
   "engines": {
     "node": ">=20"

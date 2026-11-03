@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<!--
+  Coquille LG webOS de Ma TV.
+
+  Choix : redirection (location.replace) plutôt qu'iframe.
+  - Le site devient le document principal : il reçoit directement les touches de la télécommande
+    (dans un iframe, le focus et les keydown restent souvent bloqués sur la page parente) ;
+  - le plein écran vidéo (requestFullscreen) et la lecture HLS native marchent sans autorisations d'iframe ;
+  - webOS envoie toutes les touches sans enregistrement ; avec disableBackHistoryAPI (appinfo.json), Retour (461)
+    arrive au site, qui ferme le lecteur ou quitte l'appli depuis l'accueil (web/src/tv-app.js) ;
+  - replace() n'ajoute pas d'entrée d'historique : Retour ne ramène jamais sur cette page vide.
+  L'adresse du site est injectée depuis config.json → siteUrl au packaging (npm run tv:package).
+-->
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920">
+  <title>Ma TV</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0d1420; color: #e8edf5; font: 32px/1.4 sans-serif; }
+    body { display: flex; align-items: center; justify-content: center; text-align: center; }
+    a { color: #ffb547; }
+  </style>
+</head>
+<body>
+  <div>
+    <p>Chargement de Ma TV…</p>
+    <p id="offline" hidden>Pas de connexion ? Vérifie le réseau de la TV puis appuie sur OK.<br><a id="retry" href="__SITE_URL__/">Réessayer</a></p>
+  </div>
+  <script>
+    var SITE = '__SITE_URL__/';
+    function go() { location.replace(SITE); }
+    // Retour avant la redirection : on quitte l'appli plutôt que de rester sur cet écran.
+    document.addEventListener('keydown', function (e) {
+      if (e.keyCode === 461) { try { window.close(); } catch (err) {} }
+      else if (e.keyCode === 13) go();
+    });
+    if (navigator.onLine === false) {
+      document.getElementById('offline').hidden = false;
+      document.getElementById('retry').focus();
+      window.addEventListener('online', go);
+    } else {
+      go();
+    }
+  </script>
+</body>
+</html>

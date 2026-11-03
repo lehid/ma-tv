@@ -1,0 +1,14 @@
+{
+  "id": "io.github.lehid.matv",
+  "version": "1.0.0",
+  "vendor": "lehid",
+  "type": "web",
+  "main": "index.html",
+  "title": "Ma TV",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "bgColor": "#0d1420",
+  "iconColor": "#0d1420",
+  "resolution": "1920x1080",
+  "disableBackHistoryAPI": true
+}
