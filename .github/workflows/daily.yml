@@ -12,8 +12,9 @@ on:
 permissions:
   contents: read
 
+# Un groupe par branche : un run de test (ex. fix/ci) n'annule plus le run de main, et inversement.
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -94,6 +95,8 @@ jobs:
 
   deploy:
     needs: build
+    # Seul main publie : les autres branches servent à tester epg + build.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       pages: write
