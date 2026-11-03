@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ma TV</title>
+  <meta name="description" content="Chaînes TV publiques du monde entier, filtrables, lisibles au navigateur ou sur Smart TV.">
+  <meta name="theme-color" content="#0d1420">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono&display=swap">
+</head>
+<body>
+  <main>
+    <form class="filters" id="filters" role="search" onsubmit="return false">
+      <label class="field"><span>Rechercher</span><input id="q" type="search" placeholder="France 24, sport, BBC…" autocomplete="off"></label>
+      <div class="field"><span>Liste</span>
+        <div class="seg" id="scope">
+          <button type="button" data-v="mine" aria-pressed="true">Ma sélection</button>
+          <button type="button" data-v="world" aria-pressed="false">Monde</button>
+          <button type="button" data-v="favs" aria-pressed="false">★ Favoris</button>
+        </div>
+      </div>
+      <label class="field"><span>Pays</span><select id="country"><option value="">Tous</option></select></label>
+      <label class="field"><span>Catégorie</span><select id="cat"><option value="">Toutes</option></select></label>
+      <label class="field"><span>Langue</span><select id="lang"><option value="">Toutes</option></select></label>
+      <label class="field"><span>Adulte 🔞</span>
+        <select id="nsfw"><option value="show">Afficher (tagué)</option><option value="hide">Masquer</option><option value="only">Uniquement</option></select>
+      </label>
+      <label class="field"><span>État</span>
+        <select id="alive"><option value="">Tous les flux</option><option value="ok">Vérifiés en ligne</option><option value="nogeo">Sans géo-blocage</option></select>
+      </label>
+      <div class="field"><span>Playlist</span><button type="button" class="primary" id="download">⬇ M3U de cette liste</button></div>
+    </form>
+    <p class="summary" id="summary" aria-live="polite">Chargement des chaînes…</p>
+    <div id="list"></div>
+    <button type="button" class="more" id="more" hidden>Afficher plus</button>
+  </main>
+  <div class="dial" id="dial" hidden></div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

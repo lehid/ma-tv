@@ -1,0 +1,79 @@
+name: Mise à jour quotidienne
+
+on:
+  schedule:
+    - cron: '17 3 * * *' # chaque nuit vers 4h-5h (heure de Paris)
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ['config.json', 'scripts/**', 'web/**', 'public/**', '.github/workflows/**']
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test
+
+      - name: Vérifier les flux de ma sélection
+        run: npm run check
+
+      - name: Générer les playlists
+        run: npm run playlist
+
+      - name: Préparer la liste EPG
+        run: npm run epg:channels
+
+      - name: Télécharger le guide TV (iptv-org/epg)
+        continue-on-error: true # sans guide, le site et la playlist restent utilisables
+        timeout-minutes: 40
+        run: |
+          git clone --depth 1 https://github.com/iptv-org/epg.git epg/iptv-org-epg
+          cd epg/iptv-org-epg
+          npm ci --no-audit --no-fund
+          npm run grab --- \
+            --channels="$GITHUB_WORKSPACE/epg/channels.xml" \
+            --output="$GITHUB_WORKSPACE/public/guide.xml" \
+            --days="$(node -p "require('$GITHUB_WORKSPACE/config.json').epg?.days ?? 2")" \
+            --maxConnections=5 --timeout=15000 --gzip
+
+      - name: Alléger le guide pour le site
+        run: npm run epg:now
+
+      - name: Statistiques
+        run: npm run stats
+
+      - name: Construire le site
+        run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

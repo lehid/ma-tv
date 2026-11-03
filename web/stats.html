@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Stats · Ma TV</title>
+  <meta name="theme-color" content="#0d1420">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono&display=swap">
+</head>
+<body>
+  <main>
+    <div class="kpis" id="kpis"></div>
+    <section class="panel">
+      <h2>Chaînes par pays</h2>
+      <div class="map-wrap" id="map" role="img" aria-label="Carte du monde du nombre de chaînes par pays"></div>
+      <div class="legend" id="legend"></div>
+    </section>
+    <div class="panels" style="margin-top:1.5rem">
+      <section class="panel"><h2>Top 15 des pays</h2><div class="bars" id="countries"></div></section>
+      <section class="panel"><h2>Chaînes par catégorie</h2><div class="bars" id="cats"></div></section>
+      <section class="panel"><h2>Top 15 des langues</h2><div class="bars" id="langs"></div></section>
+      <section class="panel"><h2>Flux par qualité d'image</h2><div class="bars" id="quality"></div></section>
+    </div>
+  </main>
+  <div class="tooltip" id="tip" hidden></div>
+  <script type="module" src="./src/stats.js"></script>
+</body>
+</html>

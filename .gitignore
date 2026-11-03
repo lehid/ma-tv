@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.cache/
+epg/iptv-org-epg/
+epg/guide.xml
+public/*.m3u
+public/guide.xml*
+public/data/*.json
+!public/data/.gitkeep
+epg/channels.xml

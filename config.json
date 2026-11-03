@@ -1,0 +1,18 @@
+{
+  "$comment": "Une chaîne est retenue si son pays OU une de ses langues correspond, ET (si 'categories' n'est pas vide) une de ses catégories correspond.",
+  "siteUrl": "https://lehid.github.io/ma-tv",
+  "countries": ["FR", "BE", "CH", "CA", "MA", "DZ", "TN"],
+  "languages": ["fra"],
+  "categories": [],
+  "excludeCategories": ["shop", "religious"],
+  "excludeChannels": [],
+  "favorites": ["France24.fr", "TV5MondeInfo.fr", "Franceinfo.fr", "Arte.fr", "BFMTV.fr"],
+  "nsfw": "tag",
+  "excludeGeoBlocked": false,
+  "excludeDead": true,
+  "perCountryPlaylists": true,
+  "epg": {
+    "days": 2,
+    "preferredSites": ["tv.orange.fr", "chaines-tv.orange.fr", "programme-tv.net", "telerama.fr", "canalplus.com", "france.tv", "tvpassport.com"]
+  }
+}

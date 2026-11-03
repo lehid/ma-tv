@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Guide TV · Ma TV</title>
+  <meta name="theme-color" content="#0d1420">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono&display=swap">
+</head>
+<body>
+  <main>
+    <form class="filters" role="search" onsubmit="return false">
+      <label class="field"><span>Rechercher une chaîne ou un programme</span><input id="q" type="search" placeholder="Journal, film, France 2…" autocomplete="off"></label>
+      <label class="field"><span>Afficher</span>
+        <select id="when"><option value="now">En ce moment</option><option value="20:45">Ce soir (20:45)</option><option value="23:00">Fin de soirée (23:00)</option></select>
+      </label>
+    </form>
+    <p class="summary" id="summary" aria-live="polite">Chargement du guide…</p>
+    <div id="rows"></div>
+  </main>
+  <script type="module" src="./src/guide.js"></script>
+</body>
+</html>

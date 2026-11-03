@@ -1,0 +1,31 @@
+{
+  "name": "ma-tv",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Lecteur web, playlist M3U perso, guide TV et stats à partir de iptv-org",
+  "license": "MIT",
+  "scripts": {
+    "check": "node scripts/check-streams.mjs",
+    "playlist": "node scripts/build-playlist.mjs",
+    "epg:channels": "node scripts/build-epg-channels.mjs",
+    "epg:now": "node scripts/build-epg-now.mjs",
+    "stats": "node scripts/build-stats.mjs",
+    "data": "npm run playlist && npm run epg:channels && npm run epg:now && npm run stats",
+    "test": "node --test \"scripts/**/*.test.mjs\"",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "d3-geo": "^3.1.1",
+    "d3-selection": "^3.0.0",
+    "hls.js": "^1.6.5",
+    "topojson-client": "^3.1.0",
+    "vite": "^6.3.5",
+    "world-atlas": "^2.0.2"
+  }
+}
