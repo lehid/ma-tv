@@ -4,6 +4,7 @@ let HlsPromise;
 const loadHls = () => (HlsPromise ||= import('hls.js').then((m) => m.default));
 import { nowNext, hhmm } from './data.js';
 import { KEYS } from './tv-nav.js';
+import { setupAirPlay, setupChromecast } from './cast.js';
 
 const el = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; };
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -22,6 +23,8 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
           <button data-act="fav">☆ Favori</button>
           <button data-act="alt">Autre flux</button>
           <button data-act="fs">⛶ Plein écran</button>
+          <button data-cast="airplay" hidden>📺 AirPlay</button>
+          <button data-cast="chromecast" hidden>📺 Caster</button>
           <button data-act="close">✕ Fermer</button>
         </div>
       </div>
@@ -139,9 +142,10 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     streamIdx = 0;
     root.hidden = false;
     renderOsd();
-    playStream();
     wake();
     root.querySelector('[data-act="next"]').focus({ preventScroll: true });
+    if (chromecast.isCasting()) { castHere(); return; }
+    playStream();
     enterFullscreen({ auto: true });
   }
 
@@ -205,11 +209,49 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     if (act === 'close') close();
     else if (act === 'prev') zap(-1);
     else if (act === 'next') zap(1);
-    else if (act === 'alt') { streamIdx = (streamIdx + 1) % current.streams.length; playStream(); }
+    else if (act === 'alt') { streamIdx = (streamIdx + 1) % current.streams.length; if (chromecast.isCasting()) castHere(); else playStream(); }
     else if (act === 'fav') { onToggleFavorite?.(current); renderOsd(); }
     else if (act === 'fs') toggleFullscreen();
   });
   root.addEventListener('mousemove', wake);
+  root.addEventListener('touchstart', wake, { passive: true });
+
+  // Sortie du plein écran : iOS met la vidéo en pause en quittant son lecteur natif (« écran figé »).
+  // On relance la lecture et on réaffiche l'OSD.
+  const resumeAfterFullscreen = () => {
+    if (root.hidden) return;
+    wake();
+    updateFsButton();
+    if (video.paused && !chromecast.isCasting()) video.play().catch(() => {});
+  };
+  video.addEventListener('webkitendfullscreen', resumeAfterFullscreen);
+  const onFsChange = () => { if (!fsElement()) resumeAfterFullscreen(); };
+  document.addEventListener('fullscreenchange', onFsChange);
+  document.addEventListener('webkitfullscreenchange', onFsChange);
+
+  // Diffusion vers la TV : AirPlay (Safari) et Chromecast (Chrome).
+  setupAirPlay(video, root.querySelector('[data-cast="airplay"]'));
+  let castDevice = '';
+  function castHere() {
+    playToken += 1; // annule les essais et minuteurs de lecture locale
+    destroyHls();
+    video.pause();
+    showMsg(`📺 Diffusion de <strong>${esc(current.name)}</strong> sur <strong>${esc(castDevice)}</strong>.<br>CH+ / CH− pour changer de chaîne sur la TV.`);
+    chromecast.castCurrent();
+  }
+  const chromecast = setupChromecast(root.querySelector('[data-cast="chromecast"]'), {
+    getMedia: () => {
+      if (!current) return null;
+      // La TV ne lit pas le http:// depuis le récepteur https : on prend le premier flux https.
+      const s = current.streams.slice(streamIdx).concat(current.streams.slice(0, streamIdx)).find((x) => x.url.startsWith('https:'));
+      return s && { url: s.url, title: current.name, subtitle: 'Ma TV', image: current.logo };
+    },
+    onStart: (name) => { castDevice = name; if (current && !root.hidden) castHere(); },
+    onEnd: () => { if (current && !root.hidden) playStream(); },
+    onError: (e) => showMsg(e?.message === 'no-https'
+      ? `<strong>${esc(current?.name || 'Cette chaîne')} ne peut pas être diffusée.</strong><br>Elle n'a pas de flux sécurisé (https), seul format accepté par Chromecast. Essaie une autre chaîne.`
+      : `<strong>La TV n'a pas pu lire ${esc(current?.name || 'ce flux')}.</strong><br>Certains flux refusent la diffusion. Essaie « Autre flux » ou une autre chaîne.`),
+  });
   document.addEventListener('keydown', (e) => {
     if (root.hidden) return;
     wake();
