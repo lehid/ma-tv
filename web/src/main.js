@@ -19,6 +19,26 @@ let filtered = [];
 // Titres de section sans émoji (les groupes M3U gardent leur libellé d'origine pour les applis IPTV).
 const sectionTitle = (g) => (g === FAVORITES_GROUP ? 'Favoris' : g === NSFW_GROUP ? 'Adulte (18+)' : g);
 
+// Noms de pays et de langues en français quand le navigateur sait les donner (Intl.DisplayNames),
+// sinon le nom anglais d'iptv-org (vieux navigateurs de TV).
+function displayNames(type) {
+  let dn = null;
+  try { if (typeof Intl !== 'undefined' && Intl.DisplayNames) dn = new Intl.DisplayNames(['fr'], { type }); } catch (e) { dn = null; }
+  const cache = new Map();
+  return (code, fallback) => {
+    if (!dn) return fallback || code;
+    if (!cache.has(code)) {
+      let n = '';
+      try { n = dn.of(code); } catch (e) { n = ''; }
+      cache.set(code, n && n.toLowerCase() !== code.toLowerCase() ? n.charAt(0).toUpperCase() + n.slice(1) : fallback || code);
+    }
+    return cache.get(code);
+  };
+}
+const regionName = displayNames('region');
+const languageName = displayNames('language');
+const countryName = (code) => (data.countries[code] ? regionName(code, data.countries[code][0]) : '');
+
 function inScope(c) {
   if (state.scope === 'mine' && !c.mine && !c.favorite) return false;
   if (ui.nsfw.value === 'hide' && c.nsfw) return false;
@@ -39,7 +59,7 @@ function applyFilters() {
     if (state.cat === 'favs' && !c.favorite) return false;
     if (state.cat && state.cat !== 'favs' && !c.categories.includes(state.cat)) return false;
     if (words.length) {
-      const hay = `${c.name} ${c.channel} ${data.countries[c.country]?.[0] || ''} ${c.categories.map(categoryLabel).join(' ')}`.toLowerCase();
+      const hay = `${c.name} ${c.channel} ${countryName(c.country)} ${data.countries[c.country]?.[0] || ''} ${c.categories.map(categoryLabel).join(' ')}`.toLowerCase();
       if (!words.every((w) => hay.includes(w))) return false;
     }
     return true;
@@ -47,6 +67,19 @@ function applyFilters() {
   const { play, ...rest } = Object.fromEntries(hashParams());
   setHash({ ...rest, q, pays: ui.country.value, cat: state.cat, langue: ui.lang.value, liste: state.scope === 'mine' ? '' : state.scope, play });
   prefs.set('filters', { nsfw: ui.nsfw.value, alive: ui.alive.value, scope: state.scope });
+  updateFiltersCount();
+}
+
+// Bouton Filtres : ouvre le panneau sous la barre et indique combien de filtres avancés sont actifs.
+function updateFiltersCount() {
+  const n = [ui.lang.value, ui.alive.value, ui.nsfw.value !== 'show', state.scope === 'world'].filter(Boolean).length;
+  $('filters-count').hidden = !n;
+  $('filters-count').textContent = String(n);
+  $('filters-btn').setAttribute('aria-label', n ? `Filtres, ${n} actif${n > 1 ? 's' : ''}` : 'Filtres');
+}
+function toggleFilters(open) {
+  $('filters-panel').hidden = !open;
+  $('filters-btn').setAttribute('aria-expanded', String(open));
 }
 
 /** Pastilles : Tout, Favoris, puis les catégories présentes dans la liste en cours, de la plus fournie à la moins fournie. */
@@ -67,7 +100,7 @@ function renderChips(base) {
 }
 
 function tile(c) {
-  const [cname] = data.countries[c.country] || [''];
+  const cname = countryName(c.country);
   const { now, progress } = nowNext(epg, c.id);
   const off = c.status === 'ko';
   const sub = off ? 'Hors ligne au dernier contrôle'
@@ -150,11 +183,11 @@ async function init() {
   };
   const cCount = present('country');
   fillSelect(ui.country, [...cCount.keys()].filter((k) => data.countries[k])
-    .map((k) => [k, data.countries[k][0]])
+    .map((k) => [k, countryName(k)])
     .sort((a, b) => a[1].localeCompare(b[1], 'fr')));
   const lCount = present('languages');
   fillSelect(ui.lang, [...lCount].filter(([k]) => data.languages[k]).sort((a, b) => b[1] - a[1]).slice(0, 80)
-    .map(([k]) => [k, data.languages[k]]));
+    .map(([k]) => [k, languageName(k, data.languages[k])]));
 
   const saved = prefs.get('filters', {});
   const h = hashParams();
@@ -165,8 +198,6 @@ async function init() {
   ui.lang.value = h.get('langue') || '';
   state.cat = h.get('cat') || (h.get('liste') === 'favs' ? 'favs' : '');
   setScope(h.get('liste') || saved.scope || 'mine');
-  // Filtres avancés actifs : on ouvre le panneau pour qu'ils restent visibles.
-  if (ui.lang.value || ui.alive.value || ui.nsfw.value !== 'show' || state.scope === 'world') $('more-filters').open = true;
 
   player = createPlayer({
     getList: () => filtered,
@@ -187,6 +218,7 @@ async function init() {
 let qTimer;
 ui.q.addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(refresh, 200); });
 for (const k of ['country', 'lang', 'nsfw', 'alive']) ui[k].addEventListener('change', refresh);
+$('filters-btn').addEventListener('click', () => toggleFilters($('filters-panel').hidden));
 $('scope').addEventListener('click', (e) => { const v = e.target.closest('button')?.dataset.v; if (v) { setScope(v); refresh(); } });
 $('chips').addEventListener('click', (e) => {
   const b = e.target.closest('.chip');
