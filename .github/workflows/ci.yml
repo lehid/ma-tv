@@ -1,0 +1,51 @@
+name: Tests (PR)
+
+# Vérifie chaque pull request et chaque branche de travail : tests unitaires, build, puis
+# tests de bout en bout (navigation télécommande + Chromecast simulé). Ne déploie rien :
+# le déploiement reste l'affaire de « Mise à jour quotidienne », sur main uniquement.
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tests unitaires
+        run: npm test
+
+      - name: Données minimales pour le site (sans guide TV)
+        run: |
+          npm run playlist
+          npm run stats
+          echo '{"programmes":{}}' > public/data/epg-now.json
+
+      - name: Build
+        run: npm run build
+
+      - name: Navigateur pour les tests e2e
+        run: npx playwright install --with-deps chromium
+
+      - name: Tests e2e (télécommande + Chromecast)
+        run: |
+          npm run preview:e2e > /tmp/preview.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:4173/ > /dev/null && break; sleep 1; done
+          npm run e2e

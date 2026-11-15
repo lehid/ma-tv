@@ -99,6 +99,10 @@ Elles sont **incluses mais toujours identifiées** :
 
 `playlist-sfw.m3u` n'en contient aucune, et `"nsfw": "exclude"` les retire partout.
 
+## Contribuer
+
+Le guide pour installer, tester et proposer un changement est dans [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Mentions
 
 Ce projet ne stocke ni ne rediffuse aucune vidéo : il pointe vers des flux publics recensés par iptv-org. Leur disponibilité et leurs restrictions géographiques dépendent des diffuseurs.

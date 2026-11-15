@@ -7,6 +7,8 @@ Lecteur web + playlists M3U + guide TV + stats, construits à partir de l'API pu
 - `npm run check` : vérifie les flux de la sélection → `public/data/status.json`
 - `npm run data` : playlist → epg:channels → epg:now → stats
 - `npm run dev` / `npm run build` : site Vite (racine `web/`, publicDir `public/`, sortie `dist/`)
+- `npm run preview:e2e` puis `npm run e2e` : tests de bout en bout Playwright (télécommande `e2e:tv` + Chromecast simulé `e2e:cast`), sur http://localhost:4173/ par défaut
+- CI : `.github/workflows/ci.yml` lance tests, build et e2e sur chaque PR et branche (sans déployer) ; seul `daily.yml` déploie, depuis `main`
 
 ## Architecture
 - `scripts/lib/api.mjs` : `fetchJSON` (cache `.cache/`, 6 h, avec repli sur raw.githubusercontent), `loadCatalog()` (un objet par flux, avec chaîne, feed et logo joints), `filterEntries()` (règles de `config.json`), `loadTrustedStatus()` (ignore un status.json dont moins de 15 % des flux sont OK)
