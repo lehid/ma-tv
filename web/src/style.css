@@ -384,3 +384,30 @@ a.bar:hover { background: var(--surface); }
 .tv-nav .tile:focus { outline: none; }
 .tv-nav .tile:focus .plate { outline: 3px solid var(--focus); outline-offset: 3px; transform: scale(1.04); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35); }
 .tv-nav .osd-actions button:focus, .tv-nav .osd-close:focus, .tv-nav .player-msg button:focus { outline: 3px solid var(--on-video); outline-offset: 2px; }
+
+/* Panneau d'aide diffusion (agent aide) */
+/* Inséré par le lecteur dans .player-msg (cast-help.js). Fond sombre fixe : tokens du lecteur uniquement. */
+.player-msg:has(.cast-help) { max-width: 32rem; top: 50%; max-height: calc(100% - 2rem); overflow-y: auto; } /* sans :has (vieilles TV) : 30rem, ça reste lisible */
+.cast-help { text-align: left; max-width: 32rem; }
+.cast-help .cast-help-title { display: block; color: var(--on-video); font-size: 1.15rem; font-weight: 600; line-height: 1.3; margin-bottom: 0.75rem; }
+.cast-help p { margin: 0 0 0.6rem; }
+.cast-help ol, .cast-help ul { margin: 0; padding-left: 1.4rem; display: grid; gap: 0.7rem; }
+.cast-help ul { gap: 0.35rem; }
+.cast-help li { padding-left: 0.2rem; }
+.cast-help ol > li::marker { color: var(--on-video); font-weight: 700; font-variant-numeric: tabular-nums; }
+.cast-help strong { color: var(--on-video); font-weight: 600; }
+.cast-help .cast-help-path { white-space: nowrap; }
+.cast-help .cast-help-title + ol, .cast-help .cast-help-title + p { margin-top: 0; }
+.cast-help-close {
+  display: inline-flex; align-items: center; justify-content: center; margin-top: 1.1rem; cursor: pointer;
+  font: inherit; font-weight: 600; min-height: 2.75rem; padding: 0.5rem 1.25rem;
+  background: var(--osd-btn); color: var(--on-video); border: 1px solid var(--osd-btn-line); border-radius: 999px;
+}
+.cast-help-close:hover { background: var(--osd-btn-line); }
+.cast-help-close:focus { outline: 3px solid var(--on-video); outline-offset: 2px; }
+.cast-help-close:focus:not(:focus-visible) { outline: none; }
+@media (max-width: 600px) {
+  .cast-help .cast-help-title { font-size: 1.05rem; }
+  .cast-help ol { gap: 0.6rem; }
+  .cast-help-close { width: 100%; }
+}
