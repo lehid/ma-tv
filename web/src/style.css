@@ -202,3 +202,4 @@ a.bar:hover .lbl { text-decoration: underline; }
   .osd-actions { grid-column: 1 / -1; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.osd-actions button.primary { background: var(--osd-accent); color: var(--video-bg); border-color: transparent; }

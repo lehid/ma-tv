@@ -5,6 +5,8 @@ const loadHls = () => (HlsPromise ||= import('hls.js').then((m) => m.default));
 import { nowNext, hhmm } from './data.js';
 import { KEYS } from './tv-nav.js';
 import { setupAirPlay, setupChromecast } from './cast.js';
+import { createTracks } from './tracks.js';
+import { prefs } from './store.js';
 
 const el = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; };
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -22,6 +24,9 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
           <button data-act="next" aria-label="Chaîne suivante">CH+ Suiv.</button>
           <button data-act="fav">☆ Favori</button>
           <button data-act="alt">Autre flux</button>
+          <button data-act="mute">🔊 Son</button>
+          <button data-track="audio" hidden>🔈 Audio</button>
+          <button data-track="subs" hidden>CC Sous-titres</button>
           <button data-act="fs">⛶ Plein écran</button>
           <button data-cast="airplay" hidden>📺 AirPlay</button>
           <button data-cast="chromecast" hidden>📺 Caster</button>
@@ -38,6 +43,25 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
   let idleTimer = null;
   let lastFocus = null;
   let playToken = 0;
+  let userMuted = false; // coupé volontairement (bouton 🔊 ou touche M)
+  let autoMuted = false; // coupé par nous parce que le navigateur refusait la lecture avec le son
+  const muteBtn = root.querySelector('[data-act="mute"]');
+  const tracks = createTracks({
+    video, prefs,
+    audioBtn: root.querySelector('[data-track="audio"]'),
+    subsBtn: root.querySelector('[data-track="subs"]'),
+  });
+
+  function updateSound() {
+    muteBtn.classList.toggle('primary', autoMuted && video.muted);
+    muteBtn.textContent = !video.muted ? '🔊 Son' : autoMuted ? '🔇 Activer le son' : '🔇 Son coupé';
+  }
+  function toggleMute() {
+    if (video.muted) { video.muted = false; userMuted = false; autoMuted = false; }
+    else { video.muted = true; userMuted = true; }
+    updateSound();
+  }
+  video.addEventListener('volumechange', updateSound);
 
   const showMsg = (html) => { delete msg.dataset.resume; msg.innerHTML = html; msg.hidden = !html; };
   const wake = () => {
@@ -81,6 +105,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
 
   async function playStream() {
     destroyHls();
+    tracks.reset();
     const token = ++playToken;
     const alive = () => token === playToken;
     const s = current.streams[streamIdx];
@@ -111,6 +136,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     if (hasNativeHls()) {
       video.onerror = () => { if (alive()) tryNext('Lecture impossible'); };
       setTimeout(() => { if (alive() && !started) tryNext('Pas de réponse du flux'); }, NATIVE_TIMEOUT_MS);
+      tracks.attachNative();
       video.src = s.url;
     } else {
       const Hls = await loadHls();
@@ -124,10 +150,18 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
         if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !recovered) { recovered = true; hls.recoverMediaError(); return; }
         tryNext(data.response?.code ? `Erreur HTTP ${data.response.code}` : 'Flux injoignable (hors ligne, géo-bloqué ou CORS)');
       });
+      tracks.attachHls(hls, Hls);
       hls.loadSource(s.url);
       hls.attachMedia(video);
     }
-    video.play().catch(() => { video.muted = true; video.play().catch(() => {}); });
+    video.play().catch((err) => {
+      // Seul un refus d'autoplay justifie de couper le son ; AbortError & co. sont des interruptions normales.
+      if (err?.name !== 'NotAllowedError' || !alive()) return;
+      video.muted = true;
+      autoMuted = true;
+      updateSound();
+      video.play().catch(() => {});
+    });
   }
 
   function tryNext(reason) {
@@ -145,8 +179,10 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     wake();
     root.querySelector('[data-act="next"]').focus({ preventScroll: true });
     if (chromecast.isCasting()) { castHere(); return; }
+    video.muted = userMuted; // un clic ou une touche : le navigateur autorise le son
+    autoMuted = false;
+    updateSound();
     playStream();
-    enterFullscreen({ auto: true });
   }
 
   // Plein écran : API standard (ordinateur, Android, iPad, TV) sur tout le lecteur pour garder l'OSD ;
@@ -161,13 +197,13 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     fsBtn.textContent = fsElement() ? '⤡ Quitter' : '⛶ Plein écran';
   }
 
-  function enterFullscreen({ auto = false } = {}) {
+  function enterFullscreen() {
     try {
       if (canFsRoot()) {
         const req = root.requestFullscreen ? root.requestFullscreen() : root.webkitRequestFullscreen();
         Promise.resolve(req).then(() => screen.orientation?.lock?.('landscape')).catch(() => {});
-      } else if (!auto && canFsVideo()) {
-        video.webkitEnterFullscreen(); // iPhone : pas d'appel automatique, il cacherait l'OSD
+      } else if (canFsVideo()) {
+        video.webkitEnterFullscreen(); // iPhone : plein écran natif de la vidéo
       }
     } catch (e) { /* plein écran refusé */ }
   }
@@ -195,6 +231,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
   function close() {
     playToken += 1;
     destroyHls();
+    tracks.reset();
     video.removeAttribute('src');
     video.load();
     root.hidden = true;
@@ -212,6 +249,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     else if (act === 'alt') { streamIdx = (streamIdx + 1) % current.streams.length; if (chromecast.isCasting()) castHere(); else playStream(); }
     else if (act === 'fav') { onToggleFavorite?.(current); renderOsd(); }
     else if (act === 'fs') toggleFullscreen();
+    else if (act === 'mute') toggleMute();
   });
   root.addEventListener('mousemove', wake);
   root.addEventListener('touchstart', wake, { passive: true });
@@ -291,6 +329,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     wake();
     if (KEYS.chUp.has(e.key) || KEYS.chUpCodes.has(e.keyCode)) { e.preventDefault(); zap(1); } // CH+ = chaîne suivante
     else if (KEYS.chDown.has(e.key) || KEYS.chDownCodes.has(e.keyCode)) { e.preventDefault(); zap(-1); }
+    else if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); toggleMute(); }
     else if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); toggleFullscreen(); }
     else if (KEYS.playPause.has(e.key) || KEYS.playPauseCodes.has(e.keyCode)) {
       e.preventDefault();
