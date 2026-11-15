@@ -241,7 +241,7 @@ document.addEventListener('keydown', (e) => {
 
 enableTvNav({
   getScope: () => (player?.isOpen() ? player.root : document),
-  onBack: () => { if (player?.isOpen()) { player.close(); return true; } return false; },
+  onBack: () => !!player && player.back(), // panneau d'aide du lecteur, puis le lecteur
 });
 
 init();
