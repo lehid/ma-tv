@@ -27,3 +27,22 @@ export function setHash(params) {
   const h = p.toString();
   history.replaceState(null, '', h ? `#${h}` : location.pathname + location.search);
 }
+
+// Noms de pays et de langues en français quand le navigateur sait les donner (Intl.DisplayNames),
+// sinon le nom anglais d'iptv-org (vieux navigateurs de TV).
+export function displayNames(type) {
+  let dn = null;
+  try { if (typeof Intl !== 'undefined' && Intl.DisplayNames) dn = new Intl.DisplayNames(['fr'], { type }); } catch (e) { dn = null; }
+  const cache = new Map();
+  return (code, fallback) => {
+    if (!dn) return fallback || code;
+    if (!cache.has(code)) {
+      let n = '';
+      try { n = dn.of(code); } catch (e) { n = ''; }
+      cache.set(code, n && n.toLowerCase() !== code.toLowerCase() ? n.charAt(0).toUpperCase() + n.slice(1) : fallback || code);
+    }
+    return cache.get(code);
+  };
+}
+export const regionName = displayNames('region');
+export const languageName = displayNames('language');

@@ -1,5 +1,5 @@
 // (3) Page stats : carte choroplèthe (échelle log, une teinte) + barres horizontales.
-import { header, esc, fmtDate } from './common.js';
+import { header, esc, fmtDate, regionName, languageName } from './common.js';
 import { geoNaturalEarth1, geoPath } from 'd3-geo';
 import { feature } from 'topojson-client';
 import world from 'world-atlas/countries-110m.json';
@@ -97,7 +97,7 @@ async function init() {
     fetch(`${base}data/channels.json`).then((r) => r.json()).catch(() => null),
   ]);
   if (!stats) { $('kpis').textContent = 'stats.json introuvable : lance « npm run stats ».'; return; }
-  const countries = Object.fromEntries(Object.entries(channels?.countries || {}).map(([cc, [name, flag]]) => [cc, { name, flag }]));
+  const countries = Object.fromEntries(Object.entries(channels?.countries || {}).map(([cc, [name, flag]]) => [cc, { name: regionName(cc, name), flag }]));
   meta.textContent = `Données du ${fmtDate(stats.generatedAt)}`;
   const t = stats.totals;
   const kpis = [
@@ -116,7 +116,7 @@ async function init() {
   bars($('countries'), Object.entries(stats.byCountry).slice(0, 15).map(([cc, n]) => [countries[cc]?.name || cc, n, cc]),
     { href: (cc) => `index.html#pays=${encodeURIComponent(cc)}&liste=world` });
   bars($('cats'), Object.entries(stats.byCategory).map(([c, n]) => [categoryLabel(c), n, c]), { href: (c) => `index.html#cat=${encodeURIComponent(c)}&liste=world` });
-  bars($('langs'), stats.byLanguage);
+  bars($('langs'), stats.byLanguage.map(([name, n, code]) => [code ? languageName(code, name) : name, n]));
   const order = ['4K', '1080p', '720p', 'SD (< 720p)', 'Inconnue'];
   bars($('quality'), order.filter((q) => stats.byQuality[q]).map((q) => [q, stats.byQuality[q]]));
 

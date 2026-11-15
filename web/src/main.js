@@ -1,5 +1,5 @@
 // (1) Page « Chaînes » : catégories en pastilles, grille de tuiles, lecteur, saisie de numéro à la télécommande.
-import { header, esc, fmtDate, hashParams, setHash } from './common.js';
+import { header, esc, fmtDate, hashParams, setHash, regionName, languageName } from './common.js';
 import { loadChannels, loadEpg, nowNext, channelsToM3U } from './data.js';
 import { categoryLabel, FAVORITES_GROUP, NSFW_GROUP } from './labels.js';
 import { createPlayer } from './player.js';
@@ -19,24 +19,6 @@ let filtered = [];
 // Titres de section sans émoji (les groupes M3U gardent leur libellé d'origine pour les applis IPTV).
 const sectionTitle = (g) => (g === FAVORITES_GROUP ? 'Favoris' : g === NSFW_GROUP ? 'Adulte (18+)' : g);
 
-// Noms de pays et de langues en français quand le navigateur sait les donner (Intl.DisplayNames),
-// sinon le nom anglais d'iptv-org (vieux navigateurs de TV).
-function displayNames(type) {
-  let dn = null;
-  try { if (typeof Intl !== 'undefined' && Intl.DisplayNames) dn = new Intl.DisplayNames(['fr'], { type }); } catch (e) { dn = null; }
-  const cache = new Map();
-  return (code, fallback) => {
-    if (!dn) return fallback || code;
-    if (!cache.has(code)) {
-      let n = '';
-      try { n = dn.of(code); } catch (e) { n = ''; }
-      cache.set(code, n && n.toLowerCase() !== code.toLowerCase() ? n.charAt(0).toUpperCase() + n.slice(1) : fallback || code);
-    }
-    return cache.get(code);
-  };
-}
-const regionName = displayNames('region');
-const languageName = displayNames('language');
 const countryName = (code) => (data.countries[code] ? regionName(code, data.countries[code][0]) : '');
 
 function inScope(c) {
@@ -107,7 +89,8 @@ function tile(c) {
     : now ? `<span class="live">En direct</span>${esc(now[2])}` : esc(cname);
   return `<button type="button" class="tile${off ? ' off' : ''}" data-id="${esc(c.id)}">
     <span class="plate">
-      ${c.logo ? `<img src="${esc(c.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="plate-name">${esc(c.name)}</span>`}
+      <span class="plate-name">${esc(c.name)}</span>
+      ${c.logo ? `<img src="${esc(c.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
       ${c.nsfw ? '<span class="adult" title="Contenu adulte">18+</span>' : ''}
       ${c.favorite ? '<span class="fav i i-star" aria-label="Favori"></span>' : ''}
       ${now ? `<span class="pbar"><i style="width:${Math.round(progress * 100)}%"></i></span>` : ''}
@@ -227,10 +210,12 @@ $('chips').addEventListener('click', (e) => {
   refresh();
 });
 // Logo cassé → nom de la chaîne dans la plaque.
+// Le nom de la chaîne reste affiché tant que le logo n'est pas chargé (réseau lent, logo cassé).
+$('list').addEventListener('load', (e) => {
+  if (e.target.tagName === 'IMG') e.target.closest('.plate')?.classList.add('has-logo');
+}, true);
 $('list').addEventListener('error', (e) => {
-  if (e.target.tagName !== 'IMG') return;
-  const name = e.target.closest('.tile')?.querySelector('.tile-name')?.textContent || '';
-  e.target.replaceWith(Object.assign(document.createElement('span'), { className: 'plate-name', textContent: name }));
+  if (e.target.tagName === 'IMG') e.target.remove();
 }, true);
 $('more').addEventListener('click', () => {
   const firstNew = state.shown;

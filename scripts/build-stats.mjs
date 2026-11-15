@@ -26,7 +26,7 @@ export function computeStats(entries, languages, status) {
     return m;
   };
   const langName = Object.fromEntries(languages.map((l) => [l.code, l.name]));
-  const byLanguage = Object.entries(channelsBy((e) => e.languages)).slice(0, 15).map(([code, n]) => [langName[code] || code, n]);
+  const byLanguage = Object.entries(channelsBy((e) => e.languages)).slice(0, 15).map(([code, n]) => [langName[code] || code, n, code]);
   const results = status?.results || {};
   const checked = entries.filter((e) => results[e.url] && results[e.url].ok !== null);
   return {
