@@ -16,21 +16,24 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     <div class="player" hidden role="dialog" aria-label="Lecteur">
       <video playsinline webkit-playsinline autoplay></video>
       <div class="player-msg" hidden></div>
+      <button class="osd-close" data-act="close" aria-label="Fermer le lecteur">Chaînes</button>
       <div class="osd">
-        <span class="lcn"></span>
-        <div><h2></h2><div class="now"></div><div class="progress" hidden><i></i></div></div>
+        <div class="osd-info">
+          <div class="osd-title"><span class="lcn"></span><h2></h2><span class="live-pill">EN DIRECT</span></div>
+          <div class="now"></div>
+          <div class="progress" hidden><i></i></div>
+        </div>
         <div class="osd-actions">
-          <button data-act="prev" aria-label="Chaîne précédente">CH− Préc.</button>
-          <button data-act="next" aria-label="Chaîne suivante">CH+ Suiv.</button>
-          <button data-act="fav">☆ Favori</button>
-          <button data-act="alt">Autre flux</button>
-          <button data-act="mute">🔊 Son</button>
-          <button data-track="audio" hidden>🔈 Audio</button>
-          <button data-track="subs" hidden>CC Sous-titres</button>
-          <button data-act="fs">⛶ Plein écran</button>
-          <button data-cast="airplay" hidden>📺 AirPlay</button>
-          <button data-cast="chromecast" hidden>📺 Caster</button>
-          <button data-act="close">✕ Fermer</button>
+          <button data-act="prev" aria-label="Chaîne précédente">Précédente</button>
+          <button data-act="next" aria-label="Chaîne suivante">Suivante</button>
+          <button data-act="mute">Son</button>
+          <button data-track="audio" hidden>Audio</button>
+          <button data-track="subs" hidden>Sous-titres</button>
+          <button data-act="fav">Favori</button>
+          <button data-act="alt">Autre source</button>
+          <button data-cast="airplay" hidden>AirPlay</button>
+          <button data-cast="chromecast" hidden>Caster</button>
+          <button data-act="fs">Plein écran</button>
         </div>
       </div>
     </div>`);
@@ -43,7 +46,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
   let idleTimer = null;
   let lastFocus = null;
   let playToken = 0;
-  let userMuted = false; // coupé volontairement (bouton 🔊 ou touche M)
+  let userMuted = false; // coupé volontairement (bouton Son ou touche M)
   let autoMuted = false; // coupé par nous parce que le navigateur refusait la lecture avec le son
   const muteBtn = root.querySelector('[data-act="mute"]');
   const tracks = createTracks({
@@ -54,7 +57,8 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
 
   function updateSound() {
     muteBtn.classList.toggle('primary', autoMuted && video.muted);
-    muteBtn.textContent = !video.muted ? '🔊 Son' : autoMuted ? '🔇 Activer le son' : '🔇 Son coupé';
+    muteBtn.classList.toggle('muted', video.muted);
+    muteBtn.textContent = !video.muted ? 'Son' : autoMuted ? 'Activer le son' : 'Son coupé';
   }
   function toggleMute() {
     if (video.muted) { video.muted = false; userMuted = false; autoMuted = false; }
@@ -72,18 +76,20 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
 
   function renderOsd() {
     const c = current;
-    root.querySelector('.lcn').textContent = String(c.lcn).padStart(3, '0');
+    root.querySelector('.lcn').textContent = String(c.lcn);
     root.querySelector('h2').textContent = c.name;
     const { now, next, progress } = nowNext(epg, c.id);
     const nowEl = root.querySelector('.now');
     nowEl.innerHTML = [
-      now && `<div><b>${hhmm(now[0])}</b>${esc(now[2])}</div>`,
-      next && `<div><b>${hhmm(next[0])}</b>${esc(next[2])}</div>`,
-    ].filter(Boolean).join('') || `<div>${esc(c.quality || '')} ${c.nsfw ? '· 🔞 Adulte' : ''}</div>`;
+      now && `<div><b>${hhmm(now[0])}–${hhmm(now[1])}</b>${esc(now[2])}</div>`,
+      next && `<div>Ensuite · <b>${hhmm(next[0])}</b>${esc(next[2])}</div>`,
+    ].filter(Boolean).join('') || `<div>${[c.quality, c.nsfw && 'Adulte (18+)'].filter(Boolean).map(esc).join(' · ')}</div>`;
     const bar = root.querySelector('.progress');
     bar.hidden = !now;
     if (now) bar.firstChild.style.width = `${Math.round(progress * 100)}%`;
-    root.querySelector('[data-act="fav"]').textContent = c.favorite ? '★ Favori' : '☆ Favori';
+    const fav = root.querySelector('[data-act="fav"]');
+    fav.classList.toggle('on', !!c.favorite);
+    fav.textContent = c.favorite ? 'Dans mes favoris' : 'Favori';
     root.querySelector('[data-act="alt"]').hidden = c.streams.length < 2;
   }
 
@@ -111,7 +117,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     const s = current.streams[streamIdx];
     if (!s) {
       showMsg(`<strong>Aucun flux lisible ici.</strong><br>Cette chaîne est peut-être hors ligne, géo-bloquée ou refuse les navigateurs.
-        Essaie-la dans VLC ou ton appli TV via la playlist. <br><br>▲▼ pour changer de chaîne.`);
+        Essaie-la dans VLC ou ton appli TV via la playlist.<br><br>Précédente / Suivante pour changer de chaîne.`);
       return;
     }
     if (location.protocol === 'https:' && s.url.startsWith('http:')) {
@@ -194,7 +200,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
 
   function updateFsButton() {
     fsBtn.hidden = !canFsRoot() && !canFsVideo();
-    fsBtn.textContent = fsElement() ? '⤡ Quitter' : '⛶ Plein écran';
+    fsBtn.textContent = fsElement() ? 'Quitter le plein écran' : 'Plein écran';
   }
 
   function enterFullscreen() {
@@ -268,7 +274,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     video.play().then(() => { if (msg.dataset.resume) showMsg(''); }).catch((err) => {
       if (err?.name !== 'NotAllowedError' || resumeToken !== playToken) return;
       // iOS refuse une reprise sans geste : un bouton évite l'écran figé.
-      showMsg('<button type="button" data-resume class="primary">▶ Reprendre</button>');
+      showMsg('<button type="button" data-resume class="primary">Reprendre la lecture</button>');
       msg.dataset.resume = '1';
     });
   }
@@ -308,7 +314,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     playToken += 1; // annule les essais et minuteurs de lecture locale
     destroyHls();
     video.pause();
-    showMsg(`📺 Diffusion de <strong>${esc(current.name)}</strong> sur <strong>${esc(castDevice)}</strong>.<br>CH+ / CH− pour changer de chaîne sur la TV.`);
+    showMsg(`Diffusion de <strong>${esc(current.name)}</strong> sur <strong>${esc(castDevice)}</strong>.<br>CH+ / CH− pour changer de chaîne sur la TV.`);
     chromecast.castCurrent();
   }
   const chromecast = setupChromecast(root.querySelector('[data-cast="chromecast"]'), {

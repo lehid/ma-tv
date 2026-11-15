@@ -89,12 +89,12 @@ export function createTracks({ video, audioBtn, subsBtn, prefs }) {
   function render() {
     const a = audioList();
     audioBtn.hidden = a.items.length < 2;
-    if (!audioBtn.hidden) audioBtn.textContent = `🔈 Audio : ${a.items[a.current]?.label || '—'}`;
+    if (!audioBtn.hidden) audioBtn.textContent = `Audio : ${a.items[a.current]?.label || '—'}`;
     const opts = subsOptions();
     subsBtn.hidden = opts.length === 0;
     if (!subsBtn.hidden) {
       const i = currentSub(opts);
-      subsBtn.textContent = `CC Sous-titres : ${i === -1 ? 'Non' : opts[i].label}`;
+      subsBtn.textContent = `Sous-titres : ${i === -1 ? 'Non' : opts[i].label}`;
     }
   }
 

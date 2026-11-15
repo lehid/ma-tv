@@ -10,7 +10,7 @@ export function header(active, metaText = '') {
   const h = document.createElement('header');
   h.className = 'top';
   h.innerHTML = `
-    <div class="brand"><span class="onair" aria-hidden="true"></span>Ma TV</div>
+    <a class="brand" href="index.html" aria-label="Ma TV, accueil">ma<b>.</b>tv</a>
     <nav class="nav">${PAGES.map(([href, label]) => `<a href="${href}"${href === active ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</nav>
     <div class="meta">${esc(metaText)}</div>`;
   document.body.prepend(h);

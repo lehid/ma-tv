@@ -65,7 +65,7 @@ export function setupChromecast(button, { getMedia, onStart, onEnd, onError }) {
     const refresh = () => {
       const state = context.getCastState();
       button.hidden = state === fw.CastState.NO_DEVICES_AVAILABLE;
-      button.textContent = state === fw.CastState.CONNECTED ? '📺 Arrêter le cast' : '📺 Caster';
+      button.textContent = state === fw.CastState.CONNECTED ? 'Arrêter la diffusion' : 'Caster';
     };
     context.addEventListener(fw.CastContextEventType.CAST_STATE_CHANGED, refresh);
     context.addEventListener(fw.CastContextEventType.SESSION_STATE_CHANGED, (e) => {

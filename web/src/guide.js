@@ -36,14 +36,15 @@ function render() {
     }
     rows.push(`<div class="epg-row">
       <a class="epg-ch" href="index.html#play=${encodeURIComponent(c.id)}">
-        ${c.logo ? `<img src="${esc(c.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<b>${esc(initials(c.name))}</b>`}
-        <span><span class="lcn">${String(c.lcn).padStart(3, '0')}</span> ${esc(c.name)}${c.nsfw ? ' 🔞' : ''}</span>
+        <span class="mini">${c.logo ? `<img src="${esc(c.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<b>${esc(initials(c.name))}</b>`}</span>
+        <span><span class="num">${c.lcn}</span>${esc(c.name)}${c.nsfw ? ' · 18+' : ''}</span>
       </a>
       <div class="epg-progs">${progs.map(([start, stop, title, cat, desc]) => {
         const live = start <= at && at < stop;
+        const pct = live ? Math.round(((at - start) / (stop - start)) * 100) : 0;
         return `<a class="prog${live ? ' live' : ''}" href="index.html#play=${encodeURIComponent(c.id)}" title="${esc(desc)}">
-          <time>${hhmm(start)}–${hhmm(stop)}${live && $('when').value === 'now' ? ' · en cours' : ''}</time>
-          <strong>${esc(title)}</strong>${cat ? `<small>${esc(cat)}</small>` : ''}</a>`;
+          <time>${live && $('when').value === 'now' ? 'En direct · ' : ''}${hhmm(start)}–${hhmm(stop)}</time>
+          <strong>${esc(title)}</strong>${cat ? `<small>${esc(cat)}</small>` : ''}${live ? `<span class="pbar"><i style="width:${pct}%"></i></span>` : ''}</a>`;
       }).join('')}</div>
     </div>`);
   }

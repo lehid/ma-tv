@@ -86,7 +86,7 @@ async function init() {
   const kpis = [
     [fmt(t.channels), 'chaînes'], [fmt(t.streams), 'flux'], [fmt(t.countries), 'pays'],
     [`${Math.round((t.geoBlocked / t.streams) * 100)} %`, 'flux géo-bloqués'],
-    [fmt(t.nsfwChannels), 'chaînes taguées 🔞'],
+    [fmt(t.nsfwChannels), 'chaînes adultes (18+)'],
   ];
   if (stats.health) kpis.push([`${Math.round((stats.health.ok / stats.health.checked) * 100)} %`, `de ma sélection en ligne (${fmtDate(stats.health.checkedAt)})`]);
   $('kpis').innerHTML = kpis.map(([v, l]) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('');
