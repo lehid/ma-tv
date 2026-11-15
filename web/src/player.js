@@ -67,7 +67,24 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
   }
   video.addEventListener('volumechange', updateSound);
 
-  const showMsg = (html) => { delete msg.dataset.resume; msg.innerHTML = html; msg.hidden = !html; };
+  // `.player-msg[data-help]` : un panneau d'aide (Cast) est ouvert ; tout autre message l'efface.
+  const showMsg = (html) => { delete msg.dataset.resume; delete msg.dataset.help; msg.innerHTML = html; msg.hidden = !html; };
+  const isHelpOpen = () => !msg.hidden && msg.dataset.help === '1';
+  function showHelp(html) {
+    showMsg(html);
+    if (!html) return;
+    msg.dataset.help = '1';
+    wake();
+    const btn = msg.querySelector('[data-help-close]');
+    if (btn) focusEl(btn); // à la télécommande, OK ferme le panneau
+  }
+  function closeHelp() {
+    if (!isHelpOpen()) return false;
+    const hadFocus = msg.contains(document.activeElement);
+    showMsg('');
+    if (hadFocus) focusEl(root.querySelector('[data-cast="chromecast"]:not([hidden])') || root.querySelector('[data-act="next"]'));
+    return true;
+  }
   const wake = () => {
     root.classList.remove('idle');
     clearTimeout(idleTimer);
@@ -311,6 +328,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     if (Date.now() < resumeUntil) resumeNow(); // pause automatique d'iOS juste après la sortie
   });
   msg.addEventListener('click', (e) => {
+    if (e.target.closest('[data-help-close]')) { e.stopPropagation(); closeHelp(); return; }
     if (!e.target.closest('[data-resume]')) return;
     e.stopPropagation();
     delete msg.dataset.resume;
@@ -343,7 +361,10 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     onEnd: () => { if (current && !root.hidden) playStream(); },
     onError: (e) => showMsg(e?.message === 'no-https'
       ? `<strong class="msg-title">${esc(current?.name || 'Cette chaîne')} ne peut pas être diffusée</strong>Elle n'a pas de flux sécurisé (https), seul format accepté par Chromecast. Essaie une autre chaîne.`
-      : `<strong class="msg-title">La TV n'a pas pu lire ${esc(current?.name || 'ce flux')}</strong>Certains flux refusent la diffusion. Essaie « Autre source » ou une autre chaîne.`),
+      : e?.message === 'timeout'
+        ? `<strong class="msg-title">La TV ne répond pas pour ${esc(current?.name || 'ce flux')}</strong>Le flux met trop de temps à démarrer. Essaie « Autre source » ou une autre chaîne.`
+        : `<strong class="msg-title">La TV n'a pas pu lire ${esc(current?.name || 'ce flux')}</strong>Certains flux refusent la diffusion. Essaie « Autre source » ou une autre chaîne.`),
+    onHelp: (html) => showHelp(html),
   });
   document.addEventListener('keydown', (e) => {
     if (root.hidden) return;
@@ -359,5 +380,13 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     }
   });
 
-  return { open, close, root, isOpen: () => !root.hidden, refresh: () => current && renderOsd() };
+  /** Retour : ferme d'abord le panneau d'aide, sinon le lecteur. Renvoie true si quelque chose a été fermé. */
+  function back() {
+    if (root.hidden) return false;
+    if (closeHelp()) return true;
+    close();
+    return true;
+  }
+
+  return { open, close, back, root, isOpen: () => !root.hidden, refresh: () => current && renderOsd() };
 }
