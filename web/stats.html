@@ -11,14 +11,18 @@
 <body>
   <main>
     <div class="kpis" id="kpis"></div>
-    <section class="panel">
+    <section class="panel map-panel">
       <h2>Chaînes par pays</h2>
       <div class="map-wrap" id="map" role="img" aria-label="Carte du monde du nombre de chaînes par pays"></div>
       <div class="legend" id="legend"></div>
+      <details class="table-view">
+        <summary>Voir le tableau des pays</summary>
+        <div class="table-scroll"><table id="country-table"><thead><tr><th scope="col">Pays</th><th scope="col">Chaînes</th></tr></thead><tbody></tbody></table></div>
+      </details>
     </section>
-    <div class="panels" style="margin-top:1.5rem">
+    <div class="panels">
       <section class="panel"><h2>Top 15 des pays</h2><div class="bars" id="countries"></div></section>
-      <section class="panel"><h2>Chaînes par catégorie</h2><div class="bars" id="cats"></div></section>
+      <section class="panel panel-tall"><h2>Chaînes par catégorie</h2><div class="bars" id="cats"></div></section>
       <section class="panel"><h2>Top 15 des langues</h2><div class="bars" id="langs"></div></section>
       <section class="panel"><h2>Flux par qualité d'image</h2><div class="bars" id="quality"></div></section>
     </div>

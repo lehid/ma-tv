@@ -21,7 +21,9 @@ function targetMinute(when) {
 }
 
 function render() {
-  const at = targetMinute($('when').value);
+  const when = $('when').value;
+  const isNow = when === 'now';
+  const at = targetMinute(when);
   const words = $('q').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const rows = [];
   for (const c of channels) {
@@ -40,16 +42,20 @@ function render() {
         <span><span class="num">${c.lcn}</span>${esc(c.name)}${c.nsfw ? ' · 18+' : ''}</span>
       </a>
       <div class="epg-progs">${progs.map(([start, stop, title, cat, desc]) => {
-        const live = start <= at && at < stop;
-        const pct = live ? Math.round(((at - start) / (stop - start)) * 100) : 0;
-        return `<a class="prog${live ? ' live' : ''}" href="index.html#play=${encodeURIComponent(c.id)}" title="${esc(desc)}">
-          <time>${live && $('when').value === 'now' ? 'En direct · ' : ''}${hhmm(start)}–${hhmm(stop)}</time>
-          <strong>${esc(title)}</strong>${cat ? `<small>${esc(cat)}</small>` : ''}${live ? `<span class="pbar"><i style="width:${pct}%"></i></span>` : ''}</a>`;
+        // « on » = à l'antenne à l'heure choisie ; le rouge (« live ») est réservé au direct réel.
+        const on = start <= at && at < stop;
+        const live = on && isNow;
+        const pct = on ? Math.round(((at - start) / (stop - start)) * 100) : 0;
+        return `<a class="prog${on ? ' on' : ''}${live ? ' live' : ''}" href="index.html#play=${encodeURIComponent(c.id)}" title="${esc(desc)}">
+          <time>${live ? '<span class="dot" aria-hidden="true"></span>En direct · ' : ''}${hhmm(start)}–${hhmm(stop)}</time>
+          <strong>${esc(title)}</strong>${cat ? `<small>${esc(cat)}</small>` : ''}${on ? `<span class="pbar"><i style="width:${pct}%"></i></span>` : ''}</a>`;
       }).join('')}</div>
     </div>`);
   }
   $('rows').innerHTML = rows.join('') || '<p class="empty">Pas de programme disponible. Le guide est mis à jour chaque nuit par l\'action GitHub.</p>';
   $('summary').innerHTML = `<strong>${rows.length}</strong> chaînes avec programme · à ${hhmm(at)}`;
+  $('epg-head').hidden = !rows.length;
+  $('epg-at').textContent = `${isNow ? 'Maintenant' : 'À'} ${hhmm(at)}, puis la suite`;
 }
 
 async function init() {

@@ -10,13 +10,13 @@
 </head>
 <body>
   <main>
-    <form class="filters" role="search" onsubmit="return false">
-      <label class="field"><span>Rechercher une chaîne ou un programme</span><input id="q" type="search" placeholder="Journal, film, France 2…" autocomplete="off"></label>
-      <label class="field"><span>Afficher</span>
-        <select id="when"><option value="now">En ce moment</option><option value="20:45">Ce soir (20:45)</option><option value="23:00">Fin de soirée (23:00)</option></select>
-      </label>
+    <form class="toolbar" role="search" onsubmit="return false">
+      <label class="search"><span class="i i-search" aria-hidden="true"></span>
+        <input id="q" type="search" placeholder="Rechercher une chaîne ou un programme" aria-label="Rechercher une chaîne ou un programme" autocomplete="off"></label>
+      <select id="when" aria-label="Moment de la journée"><option value="now">En ce moment</option><option value="20:45">Ce soir 20:45</option><option value="23:00">Fin de soirée 23:00</option></select>
     </form>
     <p class="summary" id="summary" aria-live="polite">Chargement du guide…</p>
+    <div class="epg-head" id="epg-head" aria-hidden="true" hidden><span>Chaîne</span><span id="epg-at"></span></div>
     <div id="rows"></div>
   </main>
   <script type="module" src="./src/guide.js"></script>

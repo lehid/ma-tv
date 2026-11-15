@@ -10,7 +10,8 @@ import { enableTvNav } from './tv-nav.js';
 const $ = (id) => document.getElementById(id);
 const meta = header('stats.html');
 const fmt = (n) => n.toLocaleString('fr-FR');
-const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+// Les teintes de la carte sont lues sur la carte elle-même (tokens --map-* définis dans style.css, par thème).
+const css = (name) => getComputedStyle($('map')).getPropertyValue(name).trim();
 
 function hexToRgb(h) {
   const n = parseInt(h.replace('#', ''), 16);
@@ -43,16 +44,21 @@ function drawMap(stats, countries) {
   const path = geoPath(projection);
   const values = Object.values(stats.byCountry);
   const maxLog = Math.log10(Math.max(...values) + 1);
-  const color = (n) => (n ? lerpColor(css('--seq-lo'), css('--seq-hi'), Math.log10(n + 1) / maxLog) : css('--nodata'));
+  const [lo, hi, none] = [css('--map-lo'), css('--map-hi'), css('--map-none')];
+  // Échelle log : 1 chaîne = teinte basse, le maximum = teinte haute (log10(1+1) ramené à 0).
+  const minLog = Math.log10(2);
+  const color = (n) => (n ? lerpColor(lo, hi, maxLog > minLog ? (Math.log10(n + 1) - minLog) / (maxLog - minLog) : 1) : none);
   const shapes = geo.features.map((f) => {
     const cc = numToAlpha[f.id] === 'GB' ? 'UK' : numToAlpha[f.id];
     const n = stats.byCountry[cc] || 0;
     const name = countries[cc]?.name || f.properties.name;
     return `<path d="${path(f)}" fill="${color(n)}" data-cc="${cc || ''}" data-n="${n}" data-name="${esc(name)}"${n ? ' tabindex="0" role="link"' : ''}><title>${esc(name)} : ${fmt(n)} chaînes</title></path>`;
   }).join('');
-  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="stroke:var(--bg);stroke-width:0.5">${shapes}</svg>`;
-  // Légende : rampe continue + bornes réelles.
-  $('legend').innerHTML = `<span>1</span><span class="ramp" style="background:linear-gradient(90deg, ${css('--seq-lo')}, ${css('--seq-hi')})"></span><span>${fmt(Math.max(...values))} chaînes (échelle log)</span>`;
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}">${shapes}</svg>`;
+  // Légende : rampe continue + bornes réelles, et la teinte « aucune chaîne » à part.
+  $('legend').innerHTML = `<span class="scale"><span>1</span><span class="ramp" style="background:linear-gradient(90deg, ${lo}, ${hi})"></span><span>${fmt(Math.max(...values))} chaînes</span></span>`
+    + '<span class="note">échelle logarithmique</span>'
+    + `<span class="scale"><span class="swatch" style="background:${none}"></span><span>aucune chaîne</span></span>`;
 
 }
 
@@ -68,6 +74,17 @@ function bindMap() {
     tip.style.top = `${e.clientY + 14}px`;
   });
   wrap.addEventListener('mouseleave', () => { tip.hidden = true; });
+  // Même info au clavier / à la télécommande : l'infobulle suit le pays focalisé.
+  wrap.addEventListener('focusin', (e) => {
+    const p = e.target.closest('path');
+    if (!p) return;
+    const r = p.getBoundingClientRect();
+    tip.hidden = false;
+    tip.innerHTML = `<strong>${esc(p.dataset.name)}</strong> · ${fmt(+p.dataset.n)} chaînes`;
+    tip.style.left = `${Math.max(8, Math.min(r.left + r.width / 2, innerWidth - tip.offsetWidth - 8))}px`;
+    tip.style.top = `${r.bottom + 8}px`;
+  });
+  wrap.addEventListener('focusout', () => { tip.hidden = true; });
   const go = (p) => { if (p?.dataset.cc && +p.dataset.n) location.href = `index.html#pays=${p.dataset.cc}&liste=world`; };
   wrap.addEventListener('click', (e) => go(e.target.closest('path')));
   wrap.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(e.target.closest('path')); });
@@ -93,7 +110,10 @@ async function init() {
 
   drawMap(stats, countries);
   bindMap();
-  bars($('countries'), Object.entries(stats.byCountry).slice(0, 15).map(([cc, n]) => [`${countries[cc]?.flag || ''} ${countries[cc]?.name || cc}`, n, cc]),
+  // Vue tableau de la carte (accessibilité : la couleur n'est jamais le seul accès à la valeur).
+  $('country-table').tBodies[0].innerHTML = Object.entries(stats.byCountry).sort((a, b) => b[1] - a[1])
+    .map(([cc, n]) => `<tr><td><a href="index.html#pays=${encodeURIComponent(cc)}&amp;liste=world">${esc(countries[cc]?.name || cc)}</a></td><td>${fmt(n)}</td></tr>`).join('');
+  bars($('countries'), Object.entries(stats.byCountry).slice(0, 15).map(([cc, n]) => [countries[cc]?.name || cc, n, cc]),
     { href: (cc) => `index.html#pays=${encodeURIComponent(cc)}&liste=world` });
   bars($('cats'), Object.entries(stats.byCategory).map(([c, n]) => [categoryLabel(c), n, c]), { href: (c) => `index.html#cat=${encodeURIComponent(c)}&liste=world` });
   bars($('langs'), stats.byLanguage);
