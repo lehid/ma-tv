@@ -19,7 +19,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
       <button class="osd-close" data-act="close" aria-label="Fermer le lecteur">Chaînes</button>
       <div class="osd">
         <div class="osd-info">
-          <div class="osd-title"><span class="lcn"></span><h2></h2><span class="live-pill">EN DIRECT</span></div>
+          <div class="osd-title"><span class="lcn"></span><h2></h2><span class="live-pill">En direct</span></div>
           <div class="now"></div>
           <div class="progress" hidden><i></i></div>
         </div>
@@ -116,8 +116,8 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     const alive = () => token === playToken;
     const s = current.streams[streamIdx];
     if (!s) {
-      showMsg(`<strong>Aucun flux lisible ici.</strong><br>Cette chaîne est peut-être hors ligne, géo-bloquée ou refuse les navigateurs.
-        Essaie-la dans VLC ou ton appli TV via la playlist.<br><br>Précédente / Suivante pour changer de chaîne.`);
+      showMsg(`<strong class="msg-title">Aucun flux lisible ici</strong>Cette chaîne est peut-être hors ligne, géo-bloquée ou refuse les navigateurs.
+        Essaie-la dans VLC ou ton appli TV avec la playlist.<span class="msg-hint">Passe à la chaîne précédente ou suivante pour continuer.</span>`);
       return;
     }
     if (location.protocol === 'https:' && s.url.startsWith('http:')) {
@@ -135,7 +135,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
       setTimeout(() => {
         if (!alive() || video.videoWidth > 0) return;
         if (streamIdx + 1 < current.streams.length) tryNext('Pas d\'image (piste vidéo absente ou codec non supporté)');
-        else showMsg('<strong>Son seulement.</strong><br>Ce flux n\'a pas d\'image lisible sur cet appareil. Essaie-le dans VLC ou ton appli TV.');
+        else showMsg('<strong class="msg-title">Son seulement</strong>Ce flux n\'a pas d\'image lisible sur cet appareil. Essaie-le dans VLC ou ton appli TV.');
       }, NO_PICTURE_CHECK_MS);
     }, { once: true });
 
@@ -147,7 +147,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     } else {
       const Hls = await loadHls();
       if (!alive()) return; // l'utilisateur a déjà zappé
-      if (!Hls.isSupported()) { showMsg('<strong>Ce navigateur ne sait pas lire ces flux.</strong><br>Utilise la playlist dans VLC ou ton appli TV.'); return; }
+      if (!Hls.isSupported()) { showMsg('<strong class="msg-title">Ce navigateur ne sait pas lire ces flux</strong>Utilise la playlist dans VLC ou ton appli TV.'); return; }
       video.disableRemotePlayback = true; // exigé par Apple pour ManagedMediaSource
       let recovered = false;
       hls = new Hls({ manifestLoadingMaxRetry: 1, levelLoadingMaxRetry: 2, fragLoadingMaxRetry: 2 });
@@ -327,8 +327,8 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     onStart: (name) => { castDevice = name; if (current && !root.hidden) castHere(); },
     onEnd: () => { if (current && !root.hidden) playStream(); },
     onError: (e) => showMsg(e?.message === 'no-https'
-      ? `<strong>${esc(current?.name || 'Cette chaîne')} ne peut pas être diffusée.</strong><br>Elle n'a pas de flux sécurisé (https), seul format accepté par Chromecast. Essaie une autre chaîne.`
-      : `<strong>La TV n'a pas pu lire ${esc(current?.name || 'ce flux')}.</strong><br>Certains flux refusent la diffusion. Essaie « Autre flux » ou une autre chaîne.`),
+      ? `<strong class="msg-title">${esc(current?.name || 'Cette chaîne')} ne peut pas être diffusée</strong>Elle n'a pas de flux sécurisé (https), seul format accepté par Chromecast. Essaie une autre chaîne.`
+      : `<strong class="msg-title">La TV n'a pas pu lire ${esc(current?.name || 'ce flux')}</strong>Certains flux refusent la diffusion. Essaie « Autre source » ou une autre chaîne.`),
   });
   document.addEventListener('keydown', (e) => {
     if (root.hidden) return;
