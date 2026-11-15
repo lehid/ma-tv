@@ -3,7 +3,7 @@
 let HlsPromise;
 const loadHls = () => (HlsPromise ||= import('hls.js').then((m) => m.default));
 import { nowNext, hhmm } from './data.js';
-import { KEYS } from './tv-nav.js';
+import { KEYS, arrowDir, isOk, focusEl } from './tv-nav.js';
 import { setupAirPlay, setupChromecast } from './cast.js';
 import { createTracks } from './tracks.js';
 import { prefs } from './store.js';
@@ -183,7 +183,9 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     root.hidden = false;
     renderOsd();
     wake();
-    root.querySelector('[data-act="next"]').focus({ preventScroll: true });
+    // En zappant, le focus reste où il est (Précédente, Suivante…), sauf s'il n'est plus affiché.
+    const a = document.activeElement;
+    if (!root.contains(a) || !a.getClientRects().length) root.querySelector('[data-act="next"]').focus({ preventScroll: true });
     if (chromecast.isCasting()) { castHere(); return; }
     video.muted = userMuted; // un clic ou une touche : le navigateur autorise le son
     autoMuted = false;
@@ -243,7 +245,13 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     root.hidden = true;
     showMsg('');
     exitFullscreen();
-    lastFocus?.focus({ preventScroll: true });
+    // Focus rendu à la tuile de la chaîne regardée (la grille a pu être redessinée, ex. après « Favori »),
+    // sinon à l'élément d'origine.
+    let back = null;
+    const items = document.querySelectorAll('[data-id]');
+    for (let i = 0; i < items.length && !back; i++) if (items[i].dataset.id === current?.id && !root.contains(items[i])) back = items[i];
+    if (!back && lastFocus && lastFocus.isConnected) back = lastFocus;
+    focusEl(back);
   }
 
   root.addEventListener('click', (e) => {
@@ -257,6 +265,13 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
     else if (act === 'fs') toggleFullscreen();
     else if (act === 'mute') toggleMute();
   });
+  // OSD masqué : la première flèche ou OK ne fait que le réafficher (on voit où est le focus avant d'agir).
+  root.addEventListener('keydown', (e) => {
+    if (!root.classList.contains('idle') || !(arrowDir(e) || isOk(e))) return;
+    e.preventDefault();
+    e.stopPropagation();
+    wake();
+  }, true);
   root.addEventListener('mousemove', wake);
   root.addEventListener('touchstart', wake, { passive: true });
 

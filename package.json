@@ -13,6 +13,7 @@
     "stats": "node scripts/build-stats.mjs",
     "data": "npm run playlist && npm run epg:channels && npm run epg:now && npm run stats",
     "test": "node --test \"scripts/**/*.test.mjs\"",
+    "e2e:tv": "node scripts/tv-nav.e2e.cjs",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
