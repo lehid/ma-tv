@@ -336,7 +336,7 @@ async function scenario(name, fn) {
     await page.waitForTimeout(400);
     u = await ui(page);
     let l = loads(u);
-    check(l.length >= 1, 'aucun loadMedia après SESSION_STARTED');
+    check(l.length === 1, `${l.length} loadMedia après SESSION_STARTED au lieu de 1 (envoi en double ?)`);
     check(HTTPS_OF['Alpha Test'].includes(l[0].contentId), `contentId ${l[0].contentId} : pas le flux https d'Alpha Test`);
     check(l[0].contentType === 'application/x-mpegURL', `contentType ${l[0].contentType}`);
     check(u.castLabel === 'Arrêter la diffusion', `libellé « ${u.castLabel} » pendant la diffusion`);
@@ -355,7 +355,7 @@ async function scenario(name, fn) {
       u = await ui(page);
       l = loads(u);
       const last = l[l.length - 1];
-      check(l.length > before, `${how} : aucun nouveau loadMedia`);
+      check(l.length === before + 1, `${how} : ${l.length - before} loadMedia au lieu de 1`);
       check(u.channel !== prev, `${how} : la chaîne n'a pas changé`);
       check(last && last.contentId === HTTPS_OF[u.channel][0], `${how} : dernier loadMedia ${last && last.contentId} au lieu de ${HTTPS_OF[u.channel][0]} (${u.channel})`);
       prev = u.channel;
