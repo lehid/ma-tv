@@ -2,11 +2,11 @@
 // Test de bout en bout de la navigation à la télécommande (flèches, OK, Retour, CH+/CH−, chiffres).
 // Suppose un `vite preview` déjà lancé :
 //   npx vite build && npx vite preview --port 4203 --strictPort &
-//   npm run e2e:tv -- http://localhost:4203/     (ou BASE_URL=… npm run e2e:tv)
+//   npm run e2e:tv -- http://localhost:4173/     (ou BASE_URL=… npm run e2e:tv)
 // Hors `npm test` : il faut Chromium (Playwright).
 const { chromium } = require('playwright');
 
-const BASE = (process.argv[2] || process.env.BASE_URL || 'http://localhost:4203/').replace(/\/?$/, '/');
+const BASE = (process.argv[2] || process.env.BASE_URL || 'http://localhost:4173/').replace(/\/?$/, '/');
 const results = [];
 let page;
 

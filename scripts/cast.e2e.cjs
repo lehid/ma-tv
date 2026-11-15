@@ -4,11 +4,11 @@
 // et les données par un catalogue de 3 chaînes de test : aucun réseau externe, aucune vraie TV.
 // Suppose un `vite preview` déjà lancé :
 //   npx vite build && npx vite preview --port 4223 --strictPort &
-//   npm run e2e:cast -- http://localhost:4223/     (ou BASE_URL=… npm run e2e:cast)
+//   npm run e2e:cast -- http://localhost:4173/     (ou BASE_URL=… npm run e2e:cast)
 // Hors `npm test` : il faut Chromium (Playwright ≥ 1.45 pour page.clock).
 const { chromium } = require('playwright');
 
-const BASE = (process.argv[2] || process.env.BASE_URL || 'http://localhost:4223/').replace(/\/?$/, '/');
+const BASE = (process.argv[2] || process.env.BASE_URL || 'http://localhost:4173/').replace(/\/?$/, '/');
 const results = [];
 const errors = [];
 let browser;
