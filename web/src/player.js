@@ -101,6 +101,7 @@ export function createPlayer({ getList, epg = {}, onToggleFavorite }) {
       now && `<div><b>${hhmm(now[0])}–${hhmm(now[1])}</b>${esc(now[2])}</div>`,
       next && `<div>Ensuite · <b>${hhmm(next[0])}</b>${esc(next[2])}</div>`,
     ].filter(Boolean).join('') || `<div>${[c.quality, c.nsfw && 'Adulte (18+)'].filter(Boolean).map(esc).join(' · ')}</div>`;
+    if (c.unofficial) nowEl.insertAdjacentHTML('beforeend', '<div class="unofficial">Source non officielle : retransmission par un tiers, peut s\'arrêter à tout moment.</div>');
     const bar = root.querySelector('.progress');
     bar.hidden = !now;
     if (now) bar.firstChild.style.width = `${Math.round(progress * 100)}%`;

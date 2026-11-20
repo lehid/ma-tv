@@ -21,7 +21,7 @@ export async function loadChannels() {
   const configFavs = new Set(raw.favorites);
   const favOverrides = prefs.favoriteOverrides();
   const byId = new Map();
-  for (const [id, name, country, categories, languages, nsfw, logo, url, quality, geo, not247, headers] of raw.entries) {
+  for (const [id, name, country, categories, languages, nsfw, logo, url, quality, geo, not247, headers, unofficial] of raw.entries) {
     let ch = byId.get(id);
     if (!ch) {
       ch = { id, channel: id.split('@')[0], name, country, categories, languages, nsfw: !!nsfw, logo, streams: [], mine: false };
@@ -29,15 +29,16 @@ export async function loadChannels() {
     }
     if (!ch.logo && logo) ch.logo = logo;
     if (mine.has(url)) ch.mine = true;
-    ch.streams.push({ url, quality, geo: !!geo, not247: !!not247, headers: !!headers, ok: results[url]?.ok ?? null });
+    ch.streams.push({ url, quality, geo: !!geo, not247: !!not247, headers: !!headers, unofficial: !!unofficial, ok: results[url]?.ok ?? null });
   }
   const pageIsHttps = location.protocol === 'https:';
   for (const ch of byId.values()) {
     // Meilleur flux d'abord : vérifié OK > lisible ici (https, sans en-têtes spéciaux) > qualité.
-    const score = (s) => (s.ok === true ? 4 : s.ok === false ? -4 : 0) + (pageIsHttps && s.url.startsWith('http:') ? -2 : 0) + (s.headers ? -1 : 0);
+    const score = (s) => (s.ok === true ? 4 : s.ok === false ? -4 : 0) + (pageIsHttps && s.url.startsWith('http:') ? -2 : 0) + (s.headers ? -1 : 0) + (s.unofficial ? -1 : 0);
     ch.streams.sort((a, b) => score(b) - score(a) || QUALITY(b.quality) - QUALITY(a.quality));
     ch.status = ch.streams.some((s) => s.ok) ? 'ok' : ch.streams.every((s) => s.ok === false) ? 'ko' : null;
     ch.geo = ch.streams.every((s) => s.geo);
+    ch.unofficial = ch.streams.every((s) => s.unofficial);
     ch.quality = ch.streams.map((s) => s.quality).filter(Boolean).sort((a, b) => QUALITY(b) - QUALITY(a))[0] || null;
     ch.favorite = favOverrides[ch.channel] ?? (configFavs.has(ch.channel) || configFavs.has(ch.id));
     ch.group = groupOf(ch, ch.favorite ? new Set([ch.channel]) : null);

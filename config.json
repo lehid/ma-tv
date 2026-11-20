@@ -1,19 +1,64 @@
 {
   "$comment": "Une chaîne est retenue si son pays OU une de ses langues correspond, ET (si 'categories' n'est pas vide) une de ses catégories correspond.",
   "siteUrl": "https://lehid.github.io/ma-tv",
-  "countries": ["FR", "BE", "CH", "CA", "MA", "DZ", "TN"],
-  "languages": ["fra"],
+  "countries": [
+    "FR",
+    "BE",
+    "CH",
+    "CA",
+    "MA",
+    "DZ",
+    "TN"
+  ],
+  "languages": [
+    "fra"
+  ],
   "categories": [],
-  "excludeCategories": ["shop", "religious"],
+  "excludeCategories": [
+    "shop",
+    "religious"
+  ],
   "excludeChannels": [],
-  "favorites": ["France24.fr", "TV5MondeInfo.fr", "Franceinfo.fr", "Arte.fr", "BFMTV.fr"],
+  "favorites": [
+    "France24.fr",
+    "TV5MondeInfo.fr",
+    "Franceinfo.fr",
+    "arte.fr",
+    "BFMTV.fr",
+    "BFMBusiness.fr",
+    "LCP.fr",
+    "EuronewsFrench.fr",
+    "LEquipe.fr",
+    "W9.fr",
+    "RMCStory.fr",
+    "RMCDecouverte.fr"
+  ],
   "nsfw": "tag",
   "excludeGeoBlocked": false,
   "excludeDead": true,
   "perCountryPlaylists": true,
   "epg": {
     "days": 2,
-    "preferredSites": ["tv.orange.fr", "tv.sfr.fr", "programme-tv.net", "telerama.fr", "canalplus.com", "france.tv", "tvpassport.com"],
-    "excludeSites": ["chaines-tv.orange.fr", "pickx.be", "teleboy.ch", "distro.tv", "sat.tv"]
-  }
+    "preferredSites": [
+      "tv.orange.fr",
+      "tv.sfr.fr",
+      "programme-tv.net",
+      "telerama.fr",
+      "canalplus.com",
+      "france.tv",
+      "tvpassport.com"
+    ],
+    "excludeSites": [
+      "chaines-tv.orange.fr",
+      "pickx.be",
+      "teleboy.ch",
+      "distro.tv",
+      "sat.tv"
+    ]
+  },
+  "unofficialHosts": [
+    "raw.githubusercontent.com",
+    "freem3u.xyz"
+  ],
+  "$comment_unofficial": "Flux marqués « source non officielle » : hôtes en IP brute (toujours) + cette liste. Ils restent dans la playlist, signalés."
 }

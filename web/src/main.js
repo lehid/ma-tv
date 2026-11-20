@@ -29,6 +29,7 @@ function inScope(c) {
   if (ui.lang.value && !c.languages.includes(ui.lang.value)) return false;
   if (ui.alive.value === 'ok' && c.status !== 'ok') return false;
   if (ui.alive.value === 'nogeo' && c.geo) return false;
+  if (ui.alive.value === 'official' && c.unofficial) return false;
   return true;
 }
 
@@ -86,7 +87,7 @@ function tile(c) {
   const { now, progress } = nowNext(epg, c.id);
   const off = c.status === 'ko';
   const sub = off ? 'Hors ligne au dernier contrôle'
-    : now ? `<span class="live">En direct</span>${esc(now[2])}` : esc(cname);
+    : now ? `<span class="live">En direct</span>${esc(now[2])}` : c.unofficial ? 'Source non officielle' : esc(cname);
   return `<button type="button" class="tile${off ? ' off' : ''}" data-id="${esc(c.id)}">
     <span class="plate">
       <span class="plate-name">${esc(c.name)}</span>

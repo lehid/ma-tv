@@ -52,7 +52,7 @@ async function pool(items, n, fn) {
 
 if (isMain(import.meta.url)) {
   const cfg = await loadConfig();
-  const { entries } = await loadCatalog();
+  const { entries } = await loadCatalog(cfg);
   const list = process.argv.includes('--all') ? entries : filterEntries(entries, cfg);
   console.log(`Vérification de ${list.length} flux (concurrence ${CONCURRENCY}, timeout ${TIMEOUT_MS} ms)…`);
   const results = {};

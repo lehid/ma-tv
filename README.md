@@ -90,6 +90,10 @@ API iptv-org (JSON) ──► scripts/lib/api.mjs (jointure flux ⇄ chaînes �
 web/ (Vite, JS vanilla) : index.html (lecteur) · guide.html · stats.html
 ```
 
+## Sources non officielles
+
+Certaines chaînes (TF1, France 2, M6…) ne sont disponibles dans iptv-org que via des **retransmissions par des tiers** (serveurs en adresse IP brute, relais). Elles restent dans la playlist mais sont **signalées** : attribut `tvg-unofficial="1"` et mention « source non officielle » dans le nom, sous-titre « Source non officielle » sur le site, avertissement dans le lecteur. Le filtre *Disponibilité → Sources officielles uniquement* les masque. Le marquage est une heuristique (`unofficialHosts` dans `config.json`), pas une garantie juridique ; leur direct officiel et gratuit est sur france.tv, TF1+ et M6+.
+
 ## Chaînes adultes
 
 Elles sont **incluses mais toujours identifiées** :

@@ -5,7 +5,7 @@ import { loadCatalog, loadConfig, filterEntries, loadTrustedStatus, writeJSON, P
 import { toM3U } from './lib/m3u.mjs';
 
 const cfg = await loadConfig();
-const { entries, countries, categories, languages } = await loadCatalog();
+const { entries, countries, categories, languages } = await loadCatalog(cfg);
 const status = await loadTrustedStatus();
 const favorites = new Set(cfg.favorites || []);
 const epgUrl = cfg.siteUrl ? `${cfg.siteUrl.replace(/\/$/, '')}/guide.xml.gz` : undefined;
@@ -38,7 +38,7 @@ await writeJSON(join(DATA, 'channels.json'), {
   // Format tableau pour réduire la taille : voir web/src/data.js
   entries: entries.map((e) => [
     e.id, e.name, e.country, e.categories, e.languages, e.nsfw ? 1 : 0, e.logo, e.url, e.quality,
-    e.labels.includes('Geo-blocked') ? 1 : 0, e.labels.includes('Not 24/7') ? 1 : 0, e.referrer || e.userAgent ? 1 : 0,
+    e.labels.includes('Geo-blocked') ? 1 : 0, e.labels.includes('Not 24/7') ? 1 : 0, e.referrer || e.userAgent ? 1 : 0, e.unofficial ? 1 : 0,
   ]),
 });
 console.log(`✔ data/channels.json     ${String(entries.length).padStart(5)} flux (monde)`);

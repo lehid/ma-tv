@@ -63,11 +63,24 @@ function pickLogo(logos, feed) {
   return [...logos].sort((a, b) => score(b) - score(a))[0].url;
 }
 
+export const DEFAULT_UNOFFICIAL_HOSTS = ['raw.githubusercontent.com', 'freem3u.xyz'];
+
+/**
+ * Vrai si le flux vient d'une source non officielle : serveur en IPv4 brute (retransmission par un tiers)
+ * ou hôte connu pour relayer des chaînes sans être leur diffuseur. Heuristique, pas une garantie juridique.
+ */
+export function isUnofficial(url, hosts = DEFAULT_UNOFFICIAL_HOSTS) {
+  let host;
+  try { host = new URL(url).hostname.toLowerCase(); } catch { return false; }
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return true;
+  return hosts.some((h) => host === h || host.endsWith(`.${h}`));
+}
+
 /**
  * Charge l'API et renvoie le catalogue complet : un objet par flux, enrichi des infos chaîne/feed/logo.
  * Les flux sans chaîne connue (channel=null) sont ignorés : pas de pays/catégorie/EPG possibles.
  */
-export async function loadCatalog() {
+export async function loadCatalog({ unofficialHosts = DEFAULT_UNOFFICIAL_HOSTS } = {}) {
   const [channels, streams, feeds, logos, countries, categories, languages] = await Promise.all(
     ['channels', 'streams', 'feeds', 'logos', 'countries', 'categories', 'languages'].map(fetchJSON),
   );
@@ -104,6 +117,7 @@ export async function loadCatalog() {
       url: s.url,
       quality: s.quality || null,
       labels: s.labels || [],
+      unofficial: isUnofficial(s.url, unofficialHosts),
       referrer: s.referrer || null,
       userAgent: s.user_agent || null,
     });
