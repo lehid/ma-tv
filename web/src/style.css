@@ -411,3 +411,6 @@ a.bar:hover { background: var(--surface); }
   .cast-help ol { gap: 0.6rem; }
   .cast-help-close { width: 100%; }
 }
+
+/* Source non officielle (lecteur) */
+.osd .now .unofficial { color: var(--on-video-muted); font-size: 0.85rem; }

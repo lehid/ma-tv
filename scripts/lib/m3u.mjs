@@ -7,7 +7,7 @@ const GROUP_RANK = (g) => (g === FAVORITES_GROUP ? 0 : g === NSFW_GROUP ? 2 : 1)
 export function sortEntries(entries, favorites) {
   return entries
     .map((e) => ({ e, g: groupOf(e, favorites) }))
-    .sort((a, b) => GROUP_RANK(a.g) - GROUP_RANK(b.g) || a.g.localeCompare(b.g, 'fr') || a.e.name.localeCompare(b.e.name, 'fr'))
+    .sort((a, b) => GROUP_RANK(a.g) - GROUP_RANK(b.g) || a.g.localeCompare(b.g, 'fr') || a.e.name.localeCompare(b.e.name, 'fr') || (a.e.unofficial ? 1 : 0) - (b.e.unofficial ? 1 : 0))
     .map(({ e, g }) => ({ ...e, group: g }));
 }
 
@@ -22,9 +22,10 @@ export function toM3U(entries, { epgUrl, favorites = new Set() } = {}) {
       e.country && `tvg-country="${clean(e.country)}"`,
       e.languages.length && `tvg-language="${clean(e.languages.join(';'))}"`,
       e.nsfw && 'tvg-nsfw="1"',
+      e.unofficial && 'tvg-unofficial="1"',
       `group-title="${clean(e.group)}"`,
     ].filter(Boolean).join(' ');
-    const suffix = [e.quality, e.labels.includes('Geo-blocked') && 'géo-bloqué', e.labels.includes('Not 24/7') && 'pas 24/7']
+    const suffix = [e.quality, e.unofficial && 'source non officielle', e.labels.includes('Geo-blocked') && 'géo-bloqué', e.labels.includes('Not 24/7') && 'pas 24/7']
       .filter(Boolean).join(', ');
     out.push(`#EXTINF:-1 ${attrs},${clean(e.name)}${suffix ? ` (${suffix})` : ''}`);
     if (e.referrer) out.push(`#EXTVLCOPT:http-referrer=${clean(e.referrer)}`);

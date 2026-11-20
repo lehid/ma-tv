@@ -55,3 +55,24 @@ test('EPG : sites exclus ignorés, site préféré prioritaire', async () => {
   assert.equal(picked.get('A.fr@SD').site, 'good.tv');
   assert.equal(picked.has('B.fr@SD'), false);
 });
+
+test('sources non officielles : IP brute ou hôte listé', async () => {
+  const { isUnofficial } = await import('./lib/api.mjs');
+  assert.equal(isUnofficial('http://149.62.177.107:9999/tf1/index.m3u8'), true);
+  assert.equal(isUnofficial('http://5.180.164.197/x.m3u8'), true);
+  assert.equal(isUnofficial('https://raw.githubusercontent.com/u/r/main/lcp.m3u8'), true);
+  assert.equal(isUnofficial('https://origin-m6web.live.6cloud.fr/w9.m3u8'), false);
+  assert.equal(isUnofficial('https://exemple.fr/a.m3u8', ['exemple.fr']), true);
+  assert.equal(isUnofficial('pas une url'), false);
+});
+
+test('M3U : flux non officiel signalé et placé après le flux officiel de la même chaîne', () => {
+  const m3u = toM3U([
+    e({ url: 'http://1.2.3.4/a.m3u8', unofficial: true }),
+    e({ url: 'https://officiel.fr/a.m3u8' }),
+  ]);
+  const lines = m3u.split('\n');
+  assert.match(m3u, /tvg-unofficial="1"/);
+  assert.match(m3u, /\(source non officielle\)/);
+  assert.ok(lines.indexOf('https://officiel.fr/a.m3u8') < lines.indexOf('http://1.2.3.4/a.m3u8'));
+});
